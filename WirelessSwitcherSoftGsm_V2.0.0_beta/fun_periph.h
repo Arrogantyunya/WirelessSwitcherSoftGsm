@@ -18,7 +18,7 @@
 #define GPRS_PWRKEY_PIN 4
 #include "SoftwareSerial.h"
 SoftwareSerial SerialAT(U_RX, U_TX);
-#elif BOARD_TYPE == STM32
+#elif 	BOARD_TYPE == STM32
 #define SerialAT          Serial2
 #define GPRS_PWRKEY_PIN   PA15
 #define WLBG_PWR_PIN      PA5
