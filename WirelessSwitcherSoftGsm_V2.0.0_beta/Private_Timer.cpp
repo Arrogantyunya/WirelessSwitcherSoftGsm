@@ -32,6 +32,8 @@ volatile static unsigned int gTimer2Num;
 volatile static unsigned int gTimer3Num;
 volatile static unsigned int gTimer4Num;
 
+bool SendHeatBeatFlag = false;			//发送心跳包标志位
+
 
 
 /*
@@ -146,6 +148,13 @@ void Stop_Timer4(void)
 void Timer2_Interrupt(void)
 {
 	gTimer2Num++;
+	// Serial.println(String("gTimer2Num = ") + gTimer2Num);
+	//如果运行超时，复位
+	if (gTimer2Num >= 30)
+	{
+		gTimer2Num = 0;
+		SendHeatBeatFlag = true;
+	}
 }
 
 /*
@@ -156,6 +165,7 @@ void Timer2_Interrupt(void)
 void Timer3_Interrupt(void)
 {
 	gTimer3Num++;
+	Serial.println(String("gTimer3Num = ") + gTimer3Num);
 }
 
 /*
@@ -166,6 +176,7 @@ void Timer3_Interrupt(void)
 void Timer4_Interrupt(void)
 {
 	gTimer4Num++;
+	Serial.println(String("gTimer4Num = ") + gTimer4Num);
 }
 
 

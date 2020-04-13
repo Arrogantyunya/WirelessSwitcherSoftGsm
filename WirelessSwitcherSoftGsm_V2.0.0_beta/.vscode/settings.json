@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "xiosbase": "cpp"
+        "xiosbase": "cpp",
+        "*.tcc": "cpp",
+        "ios": "cpp",
+        "ostream": "cpp"
     }
 }

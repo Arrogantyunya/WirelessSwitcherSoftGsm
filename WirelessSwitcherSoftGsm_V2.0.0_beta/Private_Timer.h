@@ -17,5 +17,6 @@ void Timer2_Interrupt(void);
 void Timer3_Interrupt(void);
 void Timer4_Interrupt(void);
 
+extern bool SendHeatBeatFlag;			//发送心跳包标志位
 
 #endif

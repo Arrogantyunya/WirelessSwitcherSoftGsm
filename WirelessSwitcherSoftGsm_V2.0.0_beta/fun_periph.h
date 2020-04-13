@@ -4,21 +4,21 @@
 #include <Arduino.h>
 
 //Selset Dev Board Type
-#define UNO 1
-#define MEGA2560 2
-#define BOARD_TYPE STM32
+#define UNO			false
+#define MEGA2560	false
+#define STM32		true
 
 // Use Hardware Serial on Mega, Leonardo, Micro
-#if BOARD_TYPE == MEGA2560
+#if MEGA2560
 #define SerialAT Serial3
 #define GPRS_PWRKEY_PIN 4
-#elif BOARD_TYPE == UNO
+#elif UNO
 #define U_RX 2
 #define U_TX 3
 #define GPRS_PWRKEY_PIN 4
 #include "SoftwareSerial.h"
 SoftwareSerial SerialAT(U_RX, U_TX);
-#elif 	BOARD_TYPE == STM32
+#elif 	STM32
 #define SerialAT          Serial2
 #define GPRS_PWRKEY_PIN   PA15
 #define WLBG_PWR_PIN      PA5
