@@ -85,6 +85,8 @@ void setup()
 
 void loop()
 {
+	Serial.println("loop");
+
 	// Get GPRS Moudle Voltage
 	GPRSV = Sim868.getBattVol();//得到电压
 	Serial.println(String("GPRS Moudle Vol:") + GPRSV + "mv");
@@ -123,6 +125,8 @@ void loop()
 	Sim868.Client_Check_Connection();//SIM868客户端检查连接状态
 
 	Sim868.Send_Heartbeat_Regularly();//定时发送心跳包
+	
+	delay(100);
 }
 
 

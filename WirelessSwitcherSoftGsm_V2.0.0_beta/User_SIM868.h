@@ -33,16 +33,16 @@ class SIM868 : public GPRS{
 private:
     /* data */
 public:
-    bool GSM_Enter_Net_flag;//进入网络标志
-    bool GSM_Search_Net_Flag;//GSM搜索网络标志
-    bool LBS_Connect_flag;//LBS连接标志
-    bool Sever_Connect_flag;//服务器连接标志位
+    bool GSM_Enter_Net_flag = false;//进入网络标志
+    bool GSM_Search_Net_Flag = false;//GSM搜索网络标志
+    bool LBS_Connect_flag = false;//LBS连接标志
+    bool Sever_Connect_flag = false;//服务器连接标志位
     unsigned int Try_Connect_Sever_Num = 0; //尝试连接服务器次数
     unsigned int ReviceServerTimeoutNum = 0;//接收服务器信息超时计数
     int CSQ = 0;//
-    String IMEI;//国际移动设备识别码
-	String SIMCCID;//sim卡的识别标识.
-    String LOCData;//
+    String IMEI = "";//国际移动设备识别码
+	String SIMCCID = "";//sim卡的识别标识.
+    String LOCData = "";//LOCData
     char cmd16array[16] = {0};
     const char *cmdarray = cmd16array;
     const unsigned int OUT_NUM_LIST[MAX_OUT_NUM] = {RELAY_OUT1_PIN, RELAY_OUT2_PIN};

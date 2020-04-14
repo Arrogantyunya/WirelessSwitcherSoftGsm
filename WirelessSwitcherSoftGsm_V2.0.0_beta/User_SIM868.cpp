@@ -107,13 +107,13 @@ bool SIM868::Search_Net(void)//注册网络
         Serial.print(F("Waiting for network..."));
         if (!modem.waitForNetwork())
         {
-            Serial.println(" fail");
+            Serial.println(" fail <SIM868::Search_Net()>");
             delay(10000);
             GSM_Search_Net_Flag = false;
             return false;
         }
         GSM_Search_Net_Flag = true;
-        Serial.println("Search GSM Network OK");
+        Serial.println("Search GSM Network OK <SIM868::Search_Net()>");
         return true;
     }
     return true;
@@ -135,13 +135,13 @@ bool SIM868::Access_Net(void)
         Serial.print(apn);
         if (!modem.gprsConnect(apn, user, pass))
         {
-            Serial.println(" Fail");
+            Serial.println(" Fail <SIM868::Access_Net()>");
             delay(10000);
             GSM_Enter_Net_flag = false;
             return false;
         }
 
-        Serial.println(" Success");
+        Serial.println(" Success <SIM868::Access_Net()>");
         GSM_Enter_Net_flag = true;
         //send SMS
         //modem.sendSMS("+8613577182976", "this is SIM868");
@@ -160,27 +160,18 @@ bool SIM868::Access_Net(void)
  */
 void SIM868::Connect_Station_location_Service(void)
 {
-    if (LBS_Connect_flag == false)
+    if (GSM_Search_Net_Flag==true && LBS_Connect_flag==false)
     {
         if (modem.LBS_Connect() == true)
         {
+			Serial.println("LBS Connect OK! <SIM868::Connect_Station_location_Service()>");
             LBS_Connect_flag = true;
         }
         else
         {
-            Serial.println("LBS Connect Fail!");
+            Serial.println("LBS Connect Fail! <SIM868::Connect_Station_location_Service()>");
             LBS_Connect_flag = false;
         }
-    }
-
-    // String LOCData;
-    if (LBS_Connect_flag == true)
-    {
-        Serial.println("LBS Connect OK!");
-        //0,102.654510,25.064799,550,17/09/14,11:20:30
-        LOCData = modem.Get_LOCData();
-        Serial.println("LBSData:" + LOCData + "\r\n");
-        LBS_Connect_flag = false; //
     }
 }
 
@@ -205,11 +196,10 @@ bool SIM868::Connect_Server(void)
     if (Sever_Connect_flag == false)
 	{
 		//连接基站定位服务连接基站定位服务
-		Serial.print(F("Connecting to Server:"));
-		Serial.print(server);
+		Serial.print(String("Connecting to Server:") + server);
 		if (!client.connect(server, port))
 		{
-			Serial.println(" fail");
+			Serial.println(" fail <SIM868::Connect_Server()>");
 			delay(10000);
 			Sever_Connect_flag = false;
 			Try_Connect_Sever_Num++;
@@ -226,22 +216,36 @@ bool SIM868::Connect_Server(void)
 		}
 		else
 		{
-			Serial.println(" OK!");
+			Serial.println(" OK! <SIM868::Connect_Server()>");
 			Try_Connect_Sever_Num = 0;
 			Sever_Connect_flag = true;
-			//发送连接信息组服务器
-			CSQ = 0;
+			
+			Serial.println("GSM Enter network OK");
+
+			// char string[25];
+			// sprintf(string, "\nCSQ:%d\r", CSQ);
+			// Serial.println(string);
+			// CSQ = 0;
+
+			//发送连接信息至服务器
 			CSQ = modem.getSignalQuality();
-			Serial.println("\nGSM Enter network OK\r");
-			char string[25];
-			sprintf(string, "CSQ:%d\r", CSQ);
-			Serial.println(string);
+			Serial.println(String("CSQ:") + CSQ);
+			
 			IMEI = modem.getIMEI();
 			Serial.println("IMEI:" + IMEI);
-			//Serial.print(CSQ,DEC);
-			Serial.println("\r");
+
 			SIMCCID = modem.getSimCCID();
 			Serial.println("SIMCCID:" + SIMCCID);
+
+			if (LBS_Connect_flag == true)
+			{
+				//0,102.654510,25.064799,550,17/09/14,11:20:30
+				LOCData = modem.Get_LOCData();
+				Serial.println("LOCData:" + LOCData);
+				LBS_Connect_flag = false; //
+			}
+			Serial.println("-------");
+
 			JSONVar myObject;
 			myObject["CSQ"] = CSQ;
 			myObject["IMEI"] = IMEI;
@@ -249,15 +253,22 @@ bool SIM868::Connect_Server(void)
 			myObject["LBS"] = LOCData;
 			Serial.print("myObject.keys() = ");
 			Serial.println(myObject.keys());
+
 			// JSON.stringify(myVar) can be used to convert the json var to a String
 			String jsonString = JSON.stringify(myObject);
-			Serial.print("JSON.stringify(myObject) = ");
-			Serial.println(jsonString);
+			Serial.println("JSON.stringify(myObject) = " + jsonString);
+			// Serial.println(jsonString);
 			SendDataToSever(jsonString);
-			IMEI.trim();
-			SIMCCID.trim();
-			LOCData.trim();
-			delay(1000);
+
+			IMEI.trim();//删除头尾空白符的字符串。
+			// Serial.println("IMEI:" + IMEI);
+			SIMCCID.trim();//删除头尾空白符的字符串。
+			// Serial.println("SIMCCID:" + SIMCCID);
+			LOCData.trim();//删除头尾空白符的字符串。
+			// Serial.println("LBSData:" + LOCData);
+
+			Serial.println("END <SIM868::Connect_Server()>");
+			Serial.println("");
             return true;
 		}
 	}
@@ -281,6 +292,7 @@ void SIM868::Client_Check_Connection()
 		if (Sever_Connect_flag == true)
 		{
 			Sever_Connect_flag = false;
+			Serial.println("Sever_Connect_flag = false <SIM868::Client_Check_Connection()>");
 			client.stop();
 		}
 	}
@@ -305,23 +317,27 @@ void SIM868::Client_Check_Connection()
 void SIM868::Client_ReceiveCMD()
 {
     unsigned long timeout = millis();
-	while (client.connected() && millis() - timeout < 5000L)
+	while (client.connected() && millis() - timeout < 2000)
 	{
 		// Print available data
+		Serial.println(String("Print available data = ") + (millis()-timeout) + "ms");
+		delay(250);
 		if (client.available())
 		{
 			String res = client.readStringUntil('\n');
+			Serial.println("res:" + res);
+
 			if (res.equals("") == false)
 			{
 				JSONVar cmdObject = JSON.parse(res);//解析json（数组或者对象）字符串
 				// JSON.typeof(jsonVar) can be used to get the type of the var
 				if (JSON.typeof(cmdObject) == "undefined")
 				{
-					Serial.println("Parsing input failed!");
+					Serial.println("Parsing input failed! <SIM868::Client_ReceiveCMD()>");
 					return;
 				}
-				Serial.print("JSON.typeof(myObject) = ");
-				Serial.println(JSON.typeof(cmdObject)); // prints: object
+				Serial.println("JSON.typeof(myObject) = " + JSON.typeof(cmdObject));
+				// Serial.println(); // prints: object
 
 				// myObject.hasOwnProperty(key) checks if the object contains an entry for key
 				if (cmdObject.hasOwnProperty("time"))
@@ -353,9 +369,9 @@ void SIM868::Client_ReceiveCMD()
 				if (cmdObject.hasOwnProperty("DO16Sta"))
 				{
 					Serial.print("DO16Sta[\"DO16Sta\"] = ");
-					//char cmd=cmdObject["DO16Sta"];
-					//String CmdString = JSON.stringify(cmdObject["DO16Sta"]);
-					//Serial.println(CmdString);
+					// char cmd=cmdObject["DO16Sta"];
+					// String CmdString = JSON.stringify(cmdObject["DO16Sta"]);
+					// Serial.println(CmdString);
 					int i = 0;
 					//const char cmdarray[16]={0};
 					cmdarray = (const char *)cmdObject["DO16Sta"];
@@ -413,12 +429,14 @@ void SIM868::Client_ReceiveCMD()
 						}
 					}
 
-					//发送应答
+					// 发送群控指令应答
 					JSONVar AckObject;
+					IMEI = modem.getIMEI();
 					AckObject["IMEI"] = IMEI;
-					AckObject["DO16Sta"] = cmd16array;
 					Serial.println(IMEI);
-					Serial.println(cmdarray);
+					String DO16Sta(cmd16array);
+                  	AckObject["DO16Sta"] =DO16Sta;
+					Serial.println(DO16Sta);
 					Serial.print("AckObject.keys() = ");
 					Serial.println(AckObject.keys());
 					// JSON.stringify(myVar) can be used to convert the json var to a String
@@ -426,12 +444,13 @@ void SIM868::Client_ReceiveCMD()
 					Serial.print("JSON.stringify(myObject) = ");
 					Serial.println(jsonString1);
 					// client.print(jsonString1);
-					char *sendBuf;
-					int datalength = jsonString1.length() + 1;
-					sendBuf = (char *)malloc(datalength);
-					jsonString1.toCharArray(sendBuf, datalength);
-					client.write((unsigned char *)sendBuf, datalength);
-					free(sendBuf);
+					// char *sendBuf;
+					// int datalength = jsonString1.length() + 1;
+					// sendBuf = (char *)malloc(datalength);
+					// jsonString1.toCharArray(sendBuf, datalength);
+					// client.write((unsigned char *)sendBuf, datalength);
+					// free(sendBuf);
+					SendDataToSever(jsonString1);
 				}
 				if (cmdObject.hasOwnProperty("DONum"))
 				{
@@ -478,6 +497,7 @@ void SIM868::Client_ReceiveCMD()
 
 						//发送应答
 						JSONVar AckObject;
+						IMEI = modem.getIMEI();
 						AckObject["IMEI"] = IMEI;
 						AckObject["DONum"] = ChNum;
 						AckObject["sta"] = sta;
@@ -492,10 +512,8 @@ void SIM868::Client_ReceiveCMD()
 					}
 				}
 			}
-			res.trim();
+			res.trim();//删除头尾空白符的字符串。
 		}
-
-		timeout = millis();
 	}
 }
 
@@ -518,11 +536,11 @@ bool SIM868::SendDataToSever(String string)
 	return true;
 }
 
-void SIM868::Send_Heartbeat_Regularly()
+void SIM868::Send_Heartbeat_Regularly(void)
 {
-    Serial.println("开始发送心跳包");
+    Serial.println(">>>begin to Send Heartbeat Regularly");
     //定时发送心跳包
-    if (SendHeatBeatFlag == true && Sever_Connect_flag)
+    if (SendHeatBeatFlag == true && Sever_Connect_flag == true)
     {
         SendHeatBeatFlag = false;
         JSONVar AckObject;
@@ -540,6 +558,7 @@ void SIM868::Send_Heartbeat_Regularly()
         {
             Sim868.SendDataToSever(jsonString1);
         }
+		Serial.println("Send Heatbeat! <SIM868::Send_Heartbeat_Regularly()>");
         ReviceServerTimeoutNum++;
         Serial.print("ReviceServerTimeoutNum:");
         Serial.println(ReviceServerTimeoutNum);
@@ -554,5 +573,5 @@ void SIM868::Send_Heartbeat_Regularly()
             }
         }
     }
-    Serial.println("结束发送心跳包");
+    Serial.println("<<<end to Send Heartbeat Regularly");
 }
