@@ -21,8 +21,8 @@ Some_Peripherals Some_Peripheral;
  */
 void Some_Peripherals::Peripheral_GPIO_Pinmode(void)
 {
-	pinMode(RELAY_OUT1_PIN, OUTPUT);
-	pinMode(RELAY_OUT2_PIN, OUTPUT);
+	pinMode(KCZJ1, OUTPUT);
+	pinMode(KCZJ2, OUTPUT);
 	pinMode(GPRS_PWRKEY_PIN, OUTPUT);
   	pinMode(WLBG_PWR_PIN, OUTPUT);
 }
@@ -36,8 +36,10 @@ void Some_Peripherals::Peripheral_GPIO_Pinmode(void)
 void Some_Peripherals::Peripheral_GPIO_Config(void)
 {
 	WLBG_PWR_ON;
-	RELAY_OUT1_OFF;
-	RELAY_OUT2_OFF;
+	// RELAY_OUT1_OFF;
+	// RELAY_OUT2_OFF;
+	Some_Peripheral.Set_Relay(0,off);
+	Some_Peripheral.Set_Relay(1,off);
 	GPRS_PWRKEY_HIGH;
 }
 
@@ -89,5 +91,30 @@ void Some_Peripherals::Start_LED(void)
 // {
 	
 // }
+
+/*
+ @brief   : 设置继电器开关
+ @param   : 无
+ @return  : 无
+ */
+void Some_Peripherals::Set_Relay(unsigned char way,bool value)//设置继电器
+{
+	switch (way)
+	{
+	case 0:digitalWrite(KCZJ1, value);value>0?Serial.println("继电器1关"):Serial.println("继电器1开"); break;
+	case 1:digitalWrite(KCZJ2, value);value>0?Serial.println("继电器2关"):Serial.println("继电器2开"); break;
+	// case 2:digitalWrite(KCZJ3, value); break;
+	// case 3:digitalWrite(KCZJ4, value); break;
+	// case 4:digitalWrite(KCZJ5, value); break;
+	// case 5:digitalWrite(KCZJ6, value); break;
+	// case 6:digitalWrite(KCZJ7, value); break;
+	// case 7:digitalWrite(KCZJ8, value); break;
+	// case 8:digitalWrite(KCZJ9, value); break;
+	// case 9:digitalWrite(KCZJ10, value); break;
+	// case 10:digitalWrite(KCZJ11, value); break;
+	// case 11:digitalWrite(KCZJ12, value); break;
+	default:/*强制停止*/	Serial.println("异常!!强制停止");		break;
+	}
+}
 
 

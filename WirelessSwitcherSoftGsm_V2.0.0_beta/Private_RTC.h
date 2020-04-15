@@ -4,6 +4,9 @@
 #include "User_Clock.h"
 #include <RTClock.h>
 
+#define USE_HEX false
+#define USE_DEC true
+
 class date{
 public:
     void Update_RTC(unsigned char *buffer);

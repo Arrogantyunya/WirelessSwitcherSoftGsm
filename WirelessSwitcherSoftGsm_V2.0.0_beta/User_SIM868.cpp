@@ -21,6 +21,7 @@
 #include <libmaple/iwdg.h>
 #include <TinyGsmClient.h>
 #include <Arduino_JSON.h>
+#include "Private_RTC.h"
 
 SIM868 Sim868;
 
@@ -104,6 +105,7 @@ bool SIM868::Search_Net(void)//注册网络
 {
     if (GSM_Search_Net_Flag == false)
     {
+		Serial.println("");
         Serial.print(F("Waiting for network..."));
         if (!modem.waitForNetwork())
         {
@@ -131,6 +133,7 @@ bool SIM868::Access_Net(void)
 {
     if (GSM_Enter_Net_flag == false && GSM_Search_Net_Flag == true)
     {
+		Serial.println("");
         Serial.print(F("Connecting to "));
         Serial.print(apn);
         if (!modem.gprsConnect(apn, user, pass))
@@ -162,6 +165,7 @@ void SIM868::Connect_Station_location_Service(void)
 {
     if (GSM_Search_Net_Flag==true && LBS_Connect_flag==false)
     {
+		Serial.println("");
         if (modem.LBS_Connect() == true)
         {
 			Serial.println("LBS Connect OK! <SIM868::Connect_Station_location_Service()>");
@@ -195,6 +199,7 @@ bool SIM868::Connect_Server(void)
 {
     if (Sever_Connect_flag == false)
 	{
+		Serial.println("");
 		//连接基站定位服务连接基站定位服务
 		Serial.print(String("Connecting to Server:") + server);
 		if (!client.connect(server, port))
@@ -268,7 +273,6 @@ bool SIM868::Connect_Server(void)
 			// Serial.println("LBSData:" + LOCData);
 
 			Serial.println("END <SIM868::Connect_Server()>");
-			Serial.println("");
             return true;
 		}
 	}
@@ -292,6 +296,7 @@ void SIM868::Client_Check_Connection()
 		if (Sever_Connect_flag == true)
 		{
 			Sever_Connect_flag = false;
+			Serial.println("");
 			Serial.println("Sever_Connect_flag = false <SIM868::Client_Check_Connection()>");
 			client.stop();
 		}
@@ -320,199 +325,231 @@ void SIM868::Client_ReceiveCMD()
 	while (client.connected() && millis() - timeout < 2000)
 	{
 		// Print available data
-		Serial.println(String("Print available data = ") + (millis()-timeout) + "ms");
 		delay(250);
 		if (client.available())
 		{
-			String res = client.readStringUntil('\n');
-			Serial.println("res:" + res);
+			String Res = client.readStringUntil('\n');
+			Serial.println("");
+			Serial.println("Get Client ReceiveCMD... <SIM868::Client_ReceiveCMD()>");
+			Serial.println("Res:" + Res);
 
-			if (res.equals("") == false)
+			Sim868.ReceiveCMD_Processing(Res);//SIM868接收命令处理
+
+			// Res.trim();//删除头尾空白符的字符串。
+		}
+	}
+}
+
+/*
+ @brief     : SIM868接收命令处理
+ @param     : String
+ @return    : None
+ @Called function：
+ 1.client.write((unsigned char *)sendBuf, datalength)
+ 【AT指令调用过多，自行查阅】
+ */
+void SIM868::ReceiveCMD_Processing(String res)
+{
+	if (res.equals("") == false)
+	{
+		JSONVar cmdObject = JSON.parse(res);//解析json（数组或者对象）字符串
+		// JSON.typeof(jsonVar) can be used to get the type of the var
+		if (JSON.typeof(cmdObject) == "undefined")
+		{
+			Serial.println("Parsing input failed! <SIM868::ReceiveCMD_Processing()>");
+			return;
+		}
+		Serial.println("JSON.typeof(myObject) = " + JSON.typeof(cmdObject));
+		// Serial.println(); // prints: object
+
+		// myObject.hasOwnProperty(key) checks if the object contains an entry for key
+		if (cmdObject.hasOwnProperty("time"))
+		{
+			ReviceServerTimeoutNum = 0;
+			Serial.print("cmdObject[\"time\"] = ");
+			Serial.println(cmdObject["time"]);
+			
+			//String DataString = JSON.stringify(cmdObject["time"]);
+			#if RTC_FUN
+			const char *DataArray = (const char *)cmdObject["time"];
+			unsigned char RTC[7] = {0};
+
+			for (size_t i = 0; i < 7; i++)
 			{
-				JSONVar cmdObject = JSON.parse(res);//解析json（数组或者对象）字符串
-				// JSON.typeof(jsonVar) can be used to get the type of the var
-				if (JSON.typeof(cmdObject) == "undefined")
+				RTC[i] = (DataArray[2*i] - '0') * 10 + (DataArray[(2*i)+1] - '0');
+			}
+			Private_RTC.Update_RTC(RTC);
+
+			// noInterrupts();
+			// time_t Alarm_Time = 0;
+			// Alarm_Time = InRtc.getTime();
+			// InRtc.createAlarm(RTC_Interrupt, Alarm_Time + 60);
+			// interrupts();
+			#endif
+		}
+		if (cmdObject.hasOwnProperty("DO16Sta"))
+		{
+			Serial.print("cmdObject[\"DO16Sta\"] = ");
+			Serial.println(cmdObject["DO16Sta"]);
+			cmdarray = (const char *)cmdObject["DO16Sta"];
+			
+			for (size_t i = 0; i < MAX_OUT_NUM; i++)
+			{
+				if(cmdarray[i] == 0x31)
 				{
-					Serial.println("Parsing input failed! <SIM868::Client_ReceiveCMD()>");
-					return;
+					Some_Peripheral.Set_Relay(i,on);
 				}
-				Serial.println("JSON.typeof(myObject) = " + JSON.typeof(cmdObject));
-				// Serial.println(); // prints: object
-
-				// myObject.hasOwnProperty(key) checks if the object contains an entry for key
-				if (cmdObject.hasOwnProperty("time"))
+				else if(cmdarray[i] == 0x30)
 				{
-					ReviceServerTimeoutNum = 0;
-					Serial.print("cmdObject[\"time\"] = ");
-					Serial.println(cmdObject["time"]);
-					//20200306183358
-					const char *DataArray = (const char *)cmdObject["time"];
-					//String DataString = JSON.stringify(cmdObject["time"]);
-					#if RTC_FUN
-					RtcTime.year = (DataArray[0] - '0') * 1000 + (DataArray[1] - '0') * 100 + (DataArray[2] - '0') * 10 + (DataArray[3] - '0');
-					RtcTime.month = (DataArray[4] - '0') * 10 + (DataArray[5] - '0');
-					RtcTime.day = (DataArray[6] - '0') * 10 + (DataArray[7] - '0');
-
-					RtcTime.hour = (DataArray[8] - '0') * 10 + (DataArray[9] - '0');
-					RtcTime.minutes = (DataArray[10] - '0') * 10 + (DataArray[11] - '0');
-					RtcTime.seconds = (DataArray[12] - '0') * 10 + (DataArray[13] - '0');
-
-					UTCTime CurrentSec = osal_ConvertUTCSecs(&RtcTime);
-					InRtc.setTime(CurrentSec);
-					noInterrupts();
-					time_t Alarm_Time = 0;
-					Alarm_Time = InRtc.getTime();
-					InRtc.createAlarm(RTC_Interrupt, Alarm_Time + 60);
-					interrupts();
-					#endif
+					Some_Peripheral.Set_Relay(i,off);
 				}
-				if (cmdObject.hasOwnProperty("DO16Sta"))
+				else
 				{
-					Serial.print("DO16Sta[\"DO16Sta\"] = ");
-					// char cmd=cmdObject["DO16Sta"];
-					// String CmdString = JSON.stringify(cmdObject["DO16Sta"]);
-					// Serial.println(CmdString);
-					int i = 0;
-					//const char cmdarray[16]={0};
-					cmdarray = (const char *)cmdObject["DO16Sta"];
-					//CmdString.toCharArray(cmdarray, 16);
-					for (i = 0; i < 16; i++)
-					{
-						if (cmdarray[i] == 0x31)
-						{
-							//Serial.println(i+"channel Open");
-							switch (i)
-							{
-							case 0:
-								RELAY_OUT1_ON;
-								break;
-							case 1:
-								RELAY_OUT2_ON;
-								break;
-							default:
-								break;
-							}
-						}
-						else if (cmdarray[i] == 0x30)
-						{
-							//Serial.println(i+"channel close");
-							switch (i)
-							{
-							case 0:
-								RELAY_OUT1_OFF;
-								break;
-							case 1:
-								RELAY_OUT2_OFF;
-								break;
-							default:
-								break;
-							}
-						}
-						else
-						{
-							Serial.println("error!");
-							//Serial.println(cmdarray[i]);
-						}
-						delay(10);
-					}
-					memset(cmd16array, '0', sizeof(cmd16array));
-					//读输出IO的状态
-					for (int i = 0; i < MAX_OUT_NUM; i++)
-					{
-						if (digitalRead(OUT_NUM_LIST[i]) == LOW)
-						{
-							cmd16array[i] = '1';
-						}
-						else if (digitalRead(OUT_NUM_LIST[i]) == HIGH)
-						{
-							cmd16array[i] = '0';
-						}
-					}
-
-					// 发送群控指令应答
-					JSONVar AckObject;
-					IMEI = modem.getIMEI();
-					AckObject["IMEI"] = IMEI;
-					Serial.println(IMEI);
-					String DO16Sta(cmd16array);
-                  	AckObject["DO16Sta"] =DO16Sta;
-					Serial.println(DO16Sta);
-					Serial.print("AckObject.keys() = ");
-					Serial.println(AckObject.keys());
-					// JSON.stringify(myVar) can be used to convert the json var to a String
-					String jsonString1 = JSON.stringify(AckObject);
-					Serial.print("JSON.stringify(myObject) = ");
-					Serial.println(jsonString1);
-					// client.print(jsonString1);
-					// char *sendBuf;
-					// int datalength = jsonString1.length() + 1;
-					// sendBuf = (char *)malloc(datalength);
-					// jsonString1.toCharArray(sendBuf, datalength);
-					// client.write((unsigned char *)sendBuf, datalength);
-					// free(sendBuf);
-					SendDataToSever(jsonString1);
+					Serial.println("error!");
+					Serial.println(String("cmdarray[") + i +"]=" + cmdarray[i]);
 				}
-				if (cmdObject.hasOwnProperty("DONum"))
-				{
-					int ChNum = (int)cmdObject["DONum"];
-					if (cmdObject.hasOwnProperty("sta"))
-					{
-						int sta = (int)cmdObject["sta"];
-						if (sta == 1)
-						{
-							switch (ChNum)
-							{
-							case 255:
-								RELAY_OUT1_ON;
-								RELAY_OUT2_ON;
-								break;
-							case 1:
-								RELAY_OUT1_ON;
-								break;
-							case 2:
-								RELAY_OUT2_ON;
-								break;
-							default:
-								break;
-							}
-						}
-						else if (sta == 0)
-						{
-							switch (ChNum)
-							{
-							case 255:
-								RELAY_OUT1_OFF;
-								RELAY_OUT2_OFF;
-								break;
-							case 1:
-								RELAY_OUT1_OFF;
-								break;
-							case 2:
-								RELAY_OUT2_OFF;
-								break;
-							default:
-								break;
-							}
-						}
+				
 
-						//发送应答
-						JSONVar AckObject;
-						IMEI = modem.getIMEI();
-						AckObject["IMEI"] = IMEI;
-						AckObject["DONum"] = ChNum;
-						AckObject["sta"] = sta;
-						Serial.print("AckObject.keys() = ");
-						Serial.println(AckObject.keys());
-						// JSON.stringify(myVar) can be used to convert the json var to a String
-						String jsonString1 = JSON.stringify(AckObject);
-						Serial.print("JSON.stringify(myObject) = ");
-						Serial.println(jsonString1);
-						//client.print(jsonString1);
-						SendDataToSever(jsonString1);
-					}
+				// if (cmdarray[i] == 0x31)
+				// {
+				// 	//Serial.println(i+"channel Open");
+				// 	switch (i)
+				// 	{
+				// 	case 0:
+				// 		RELAY_OUT1_ON;
+				// 		break;
+				// 	case 1:
+				// 		RELAY_OUT2_ON;
+				// 		break;
+				// 	default:
+				// 		break;
+				// 	}
+				// }
+				// else if (cmdarray[i] == 0x30)
+				// {
+				// 	//Serial.println(i+"channel close");
+				// 	switch (i)
+				// 	{
+				// 	case 0:
+				// 		RELAY_OUT1_OFF;
+				// 		break;
+				// 	case 1:
+				// 		RELAY_OUT2_OFF;
+				// 		break;
+				// 	default:
+				// 		break;
+				// 	}
+				// }
+				// else
+				// {
+				// 	Serial.println("error!");
+				// 	//Serial.println(cmdarray[i]);
+				// }
+				// delay(10);
+			}
+			memset(cmd16array, '0', sizeof(cmd16array));
+			//读输出IO的状态
+			for (int i = 0; i < MAX_OUT_NUM; i++)
+			{
+				if (digitalRead(OUT_NUM_LIST[i]) == LOW)
+				{
+					cmd16array[i] = '1';
+				}
+				else if (digitalRead(OUT_NUM_LIST[i]) == HIGH)
+				{
+					cmd16array[i] = '0';
 				}
 			}
-			res.trim();//删除头尾空白符的字符串。
+
+			// 发送群控指令应答
+			JSONVar AckObject;
+			IMEI = modem.getIMEI();
+			AckObject["IMEI"] = IMEI;
+			Serial.println(String("IMEI:") + IMEI);
+			String DO16Sta(cmd16array);
+			AckObject["DO16Sta"] =DO16Sta;
+			Serial.println(String("DO16Sta:") + DO16Sta);
+			Serial.print("AckObject.keys() = ");
+			Serial.println(AckObject.keys());
+			// JSON.stringify(myVar) can be used to convert the json var to a String
+			String jsonString1 = JSON.stringify(AckObject);
+			Serial.print("JSON.stringify(myObject) = ");
+			Serial.println(jsonString1);
+			// client.print(jsonString1);
+			// char *sendBuf;
+			// int datalength = jsonString1.length() + 1;
+			// sendBuf = (char *)malloc(datalength);
+			// jsonString1.toCharArray(sendBuf, datalength);
+			// client.write((unsigned char *)sendBuf, datalength);
+			// free(sendBuf);
+			SendDataToSever(jsonString1);
+		}
+		if (cmdObject.hasOwnProperty("DONum"))
+		{
+			int ChNum = (int)cmdObject["DONum"];
+			if (cmdObject.hasOwnProperty("sta"))
+			{
+				int sta = (int)cmdObject["sta"];
+				if (sta == 1)
+				{
+					switch (ChNum)
+					{
+					case 255:
+						Some_Peripheral.Set_Relay(0,on);
+						Some_Peripheral.Set_Relay(1,on);
+						// RELAY_OUT1_ON;
+						// RELAY_OUT2_ON;
+						break;
+					case 1:
+						Some_Peripheral.Set_Relay(0,on);
+						// RELAY_OUT1_ON;
+						break;
+					case 2:
+						Some_Peripheral.Set_Relay(1,on);
+						// RELAY_OUT2_ON;
+						break;
+					default:
+						break;
+					}
+				}
+				else if (sta == 0)
+				{
+					switch (ChNum)
+					{
+					case 255:
+						Some_Peripheral.Set_Relay(0,off);
+						Some_Peripheral.Set_Relay(1,off);
+						// RELAY_OUT1_OFF;
+						// RELAY_OUT2_OFF;
+						break;
+					case 1:
+						Some_Peripheral.Set_Relay(0,off);
+						// RELAY_OUT1_OFF;
+						break;
+					case 2:
+						Some_Peripheral.Set_Relay(1,off);
+						// RELAY_OUT2_OFF;
+						break;
+					default:
+						break;
+					}
+				}
+
+				//发送应答
+				JSONVar AckObject;
+				IMEI = modem.getIMEI();
+				AckObject["IMEI"] = IMEI;
+				AckObject["DONum"] = ChNum;
+				AckObject["sta"] = sta;
+				Serial.print("AckObject.keys() = ");
+				Serial.println(AckObject.keys());
+				// JSON.stringify(myVar) can be used to convert the json var to a String
+				String jsonString1 = JSON.stringify(AckObject);
+				Serial.print("JSON.stringify(myObject) = ");
+				Serial.println(jsonString1);
+				//client.print(jsonString1);
+				SendDataToSever(jsonString1);
+			}
 		}
 	}
 }
@@ -538,10 +575,12 @@ bool SIM868::SendDataToSever(String string)
 
 void SIM868::Send_Heartbeat_Regularly(void)
 {
-    Serial.println(">>>begin to Send Heartbeat Regularly");
+    // Serial.println(">>>begin to Send Heartbeat Regularly");
     //定时发送心跳包
     if (SendHeatBeatFlag == true && Sever_Connect_flag == true)
     {
+		Serial.println("");
+		Serial.println("Send Heatbeat! <SIM868::Send_Heartbeat_Regularly()>");
         SendHeatBeatFlag = false;
         JSONVar AckObject;
         memset(cmd16array, 0, sizeof(cmd16array));
@@ -558,10 +597,8 @@ void SIM868::Send_Heartbeat_Regularly(void)
         {
             Sim868.SendDataToSever(jsonString1);
         }
-		Serial.println("Send Heatbeat! <SIM868::Send_Heartbeat_Regularly()>");
         ReviceServerTimeoutNum++;
-        Serial.print("ReviceServerTimeoutNum:");
-        Serial.println(ReviceServerTimeoutNum);
+        Serial.println(String("ReviceServerTimeoutNum:") + ReviceServerTimeoutNum);
         //如果接收服务器数据次数超时
         if (ReviceServerTimeoutNum >= 10)
         {
@@ -573,5 +610,5 @@ void SIM868::Send_Heartbeat_Regularly(void)
             }
         }
     }
-    Serial.println("<<<end to Send Heartbeat Regularly");
+    // Serial.println("<<<end to Send Heartbeat Regularly");
 }

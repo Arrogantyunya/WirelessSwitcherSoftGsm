@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "fun_periph.h"
 
+#define RTC_FUN 	true
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
@@ -45,7 +46,7 @@ public:
     String LOCData = "";//LOCData
     char cmd16array[16] = {0};
     const char *cmdarray = cmd16array;
-    const unsigned int OUT_NUM_LIST[MAX_OUT_NUM] = {RELAY_OUT1_PIN, RELAY_OUT2_PIN};
+    const unsigned int OUT_NUM_LIST[MAX_OUT_NUM] = {KCZJ1, KCZJ2};
 
 
 
@@ -58,6 +59,7 @@ public:
     bool Connect_Server(void);//连接到服务器
     void Client_Check_Connection();//客户端检查连接状态
     void Client_ReceiveCMD();//客户端接收命令
+    void ReceiveCMD_Processing(String res);//接收命令处理
     bool SendDataToSever(String string);//发送数据至服务器
     void Send_Heartbeat_Regularly();//定时发送心跳包
 };

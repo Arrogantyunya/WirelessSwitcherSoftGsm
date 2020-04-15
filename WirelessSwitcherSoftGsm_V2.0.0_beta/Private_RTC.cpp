@@ -16,19 +16,21 @@ bool gRTCTime_arrive_Flag = false;//RTC时间到达的标志位
 
 void date::Update_RTC(unsigned char *buffer)
 {
+#if USE_HEX
 	RTCTime.year = Type_Conv.Dec_To_Hex(buffer[0]) * 100 + Type_Conv.Dec_To_Hex(buffer[1]);
 	RTCTime.month = Type_Conv.Dec_To_Hex(buffer[2]);
 	RTCTime.day = Type_Conv.Dec_To_Hex(buffer[3]);
 	RTCTime.hour = Type_Conv.Dec_To_Hex(buffer[4]);
 	RTCTime.minutes = Type_Conv.Dec_To_Hex(buffer[5]);
 	RTCTime.seconds = Type_Conv.Dec_To_Hex(buffer[6]);
-
-	/*RTCTime.year = buffer[0] * 100 + buffer[1];
+#elif USE_DEC
+	RTCTime.year = buffer[0] * 100 + buffer[1];
 	RTCTime.month = buffer[2];
 	RTCTime.day = buffer[3];
 	RTCTime.hour = buffer[4];
 	RTCTime.minutes = buffer[5];
-	RTCTime.seconds = buffer[6];*/
+	RTCTime.seconds = buffer[6];
+#endif
 
 	Serial.print("year: "); Serial.println(RTCTime.year);
 	Serial.print("month: "); Serial.println(RTCTime.month);

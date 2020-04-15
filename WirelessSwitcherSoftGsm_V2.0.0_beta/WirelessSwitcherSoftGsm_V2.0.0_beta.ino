@@ -39,7 +39,6 @@
 #include "Private_RTC.h"
 #include "public.h"
 
-#define RTC_FUN 	true
 #define TIMER_TEST 	true
 
 #if RTC_FUN
@@ -80,17 +79,16 @@ void setup()
 	// Alarm_Time = InRtc.getTime();
 	// InRtc.createAlarm(RTC_Interrupt, Alarm_Time + 60);
 	// interrupts();
+	Serial.println("RTC_FUN");
 #endif
-}
-
-void loop()
-{
-	Serial.println("loop");
 
 	// Get GPRS Moudle Voltage
 	GPRSV = Sim868.getBattVol();//得到电压
 	Serial.println(String("GPRS Moudle Vol:") + GPRSV + "mv");
+}
 
+void loop()
+{
 	if (!Sim868.Search_Net())//GSM搜索网络函数
 	{
 		Serial.println("error for <Sim868.Search_Net()>");
@@ -125,28 +123,7 @@ void loop()
 	Sim868.Client_Check_Connection();//SIM868客户端检查连接状态
 
 	Sim868.Send_Heartbeat_Regularly();//定时发送心跳包
-	
-	delay(100);
 }
-
-
-/*
- *brief   : 定时器2中断函数
- *para    : 无
- *return  : 无
-*/
-// void Time2_Handler(void)
-// {
-// 	//Toggle ^= 1;
-// 	//digitalWrite(RELAY_OUT1_PIN, Toggle); //状态灯闪烁
-// 	TimeSec++;
-// 	//如果运行超时，复位
-// 	if (TimeSec >= 30)
-// 	{
-// 		TimeSec = 0;
-// 		SendHeatBeatFlag = true;
-// 	}
-// }
 
 #if RTC_FUN
 // void RTC_Interrupt(void)

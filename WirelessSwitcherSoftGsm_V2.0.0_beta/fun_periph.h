@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+#define on						0x00	//
+#define off						0x01	//
+
 //Selset Dev Board Type
 #define UNO			false
 #define MEGA2560	false
@@ -24,12 +27,12 @@ SoftwareSerial SerialAT(U_RX, U_TX);
 #define WLBG_PWR_PIN      PA5
 #define WLBG_PWR_ON       digitalWrite(WLBG_PWR_PIN, HIGH)
 #define WLBG_PWR_OFF      digitalWrite(WLBG_PWR_PIN, LOW)
-#define RELAY_OUT1_PIN    PA3
-#define RELAY_OUT2_PIN    PA4
-#define RELAY_OUT1_ON     digitalWrite(RELAY_OUT1_PIN, LOW)
-#define RELAY_OUT1_OFF    digitalWrite(RELAY_OUT1_PIN, HIGH)
-#define RELAY_OUT2_ON     digitalWrite(RELAY_OUT2_PIN, LOW)
-#define RELAY_OUT2_OFF    digitalWrite(RELAY_OUT2_PIN, HIGH)
+#define KCZJ1    PA3
+#define KCZJ2    PA4
+#define RELAY_OUT1_ON     digitalWrite(KCZJ1, LOW)
+#define RELAY_OUT1_OFF    digitalWrite(KCZJ1, HIGH)
+#define RELAY_OUT2_ON     digitalWrite(KCZJ2, LOW)
+#define RELAY_OUT2_OFF    digitalWrite(KCZJ2, HIGH)
 #else
 #define U_RX 2
 #define U_TX 3
@@ -54,6 +57,7 @@ public:
 	void Stop_LED(void);
 	void Start_LED(void);
 	// bool Peripheral_GPIO_Config_Init(void);//外设引脚初始化。
+	void Set_Relay(unsigned char way,bool value);//设置继电器
 }; 
 
 void LED_Interrupt(void);
