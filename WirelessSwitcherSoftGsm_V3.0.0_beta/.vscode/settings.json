@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "xiosbase": "cpp",
+        "*.tcc": "cpp",
+        "ios": "cpp",
+        "ostream": "cpp",
+        "functional": "cpp",
+        "system_error": "cpp",
+        "array": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "xlocmon": "cpp",
+        "xtr1common": "cpp",
+        "string": "cpp",
+        "xstring": "cpp",
+        "xlocale": "cpp"
+    }
+}
