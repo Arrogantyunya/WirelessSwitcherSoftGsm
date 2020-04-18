@@ -54,8 +54,8 @@ unsigned int GPRSV = 0;					//GPRS的电压
 // UTCTimeStruct RtcTime = {20, 20, 4, 9, 15, 16, 30};
 #endif
 
-static const unsigned char SoftWareVer[] = "V2.0.0";
-static const unsigned char HardWareVer[] = "V1.0.0";
+// static const unsigned char SoftWareVer[] = "V3.0.0";
+// static const unsigned char HardWareVer[] = "V1.0.0";
 
 void setup()
 {

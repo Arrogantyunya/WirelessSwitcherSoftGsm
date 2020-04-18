@@ -7,6 +7,7 @@
 #define RTC_FUN 	false
 #define TEST        true
 
+
 // Your GPRS credentials
 // Leave empty, if missing user or pass
 //普通GSM 2G网络接入点APN为CMNET
@@ -51,17 +52,19 @@ public:
     String IMEI = "";//国际移动设备识别码
 	String SIMCCID = "";//sim卡的识别标识.
     String LOCData = "";//LOCData
+    String SoftwareVer = "V3.0.0";//软件版本
+    String HardwareVer = "V1.0.0";//硬件版本
     char cmd16array[16] = {0};
     const char *cmdarray = cmd16array;
     const unsigned int OUT_NUM_LIST[MAX_OUT_NUM] = {KCZJ1, KCZJ2};
 
 
 
-    void Init(void);         //初始化
-	void PWR_CON(void);      //
-    uint16_t getBattVol(void);//得到电压
-    bool Search_Net(void);   //搜索网络
-    bool Access_Net(void);   //连接网络
+    void Init(void);            //初始化
+	void PWR_CON(void);         //
+    uint16_t getBattVol(void);  //得到电压
+    bool Search_Net(void);      //搜索网络
+    bool Access_Net(void);      //连接网络
     void Connect_Station_location_Service(void);//连接基站定位服务
     bool Connect_Server(void);//连接到服务器
     void Client_Check_Connection();//客户端检查连接状态

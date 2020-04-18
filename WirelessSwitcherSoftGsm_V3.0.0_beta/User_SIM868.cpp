@@ -256,6 +256,9 @@ bool SIM868::Connect_Server(void)
 			myObject["IMEI"] = IMEI;
 			myObject["CCID"] = SIMCCID;
 			myObject["LBS"] = LOCData;
+			myObject["DOnum"] = MAX_OUT_NUM;
+			myObject["SwVer"] = SoftwareVer;
+			myObject["HwVer"] = HardwareVer;
 			Serial.print("myObject.keys() = ");
 			Serial.println(myObject.keys());
 
