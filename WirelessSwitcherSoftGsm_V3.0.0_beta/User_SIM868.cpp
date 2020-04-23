@@ -368,19 +368,19 @@ void SIM868::ReceiveCMD_Processing(String res)
 			Serial.println("Parsing input failed! <SIM868::ReceiveCMD_Processing()>");
 			return;
 		}
+		Serial.println(); // prints: object
 		Serial.println("JSON.typeof(myObject) = " + JSON.typeof(cmdObject));
-		// Serial.println(); // prints: object
 
 		// myObject.hasOwnProperty(key) checks if the object contains an entry for key判断自身属性是否存在
-		if (cmdObject.hasOwnProperty("time"))
+		if (cmdObject.hasOwnProperty("rtc"))
 		{
 			ReviceServerTimeoutNum = 0;
-			Serial.print("cmdObject[\"time\"] = ");
-			Serial.println(cmdObject["time"]);
+			Serial.print("cmdObject[\"rtc\"] = ");
+			Serial.println(cmdObject["rtc"]);
 			
-			//String DataString = JSON.stringify(cmdObject["time"]);
+			//String DataString = JSON.stringify(cmdObject["rtc"]);
 			#if RTC_FUN
-			const char *DataArray = (const char *)cmdObject["time"];
+			const char *DataArray = (const char *)cmdObject["rtc"];
 			unsigned char RTC[7] = {0};
 
 			for (size_t i = 0; i < 7; i++)
@@ -396,129 +396,130 @@ void SIM868::ReceiveCMD_Processing(String res)
 			// interrupts();
 			#endif
 		}
-		if (cmdObject.hasOwnProperty("DO16Sta"))
-		{
-			Serial.print("cmdObject[\"DO16Sta\"] = ");
-			Serial.println(cmdObject["DO16Sta"]);
-			cmdarray = (const char *)cmdObject["DO16Sta"];
+
+		// if (cmdObject.hasOwnProperty("DO16Sta"))
+		// {
+		// 	Serial.print("cmdObject[\"DO16Sta\"] = ");
+		// 	Serial.println(cmdObject["DO16Sta"]);
+		// 	cmdarray = (const char *)cmdObject["DO16Sta"];
 			
-			for (size_t i = 0; i < MAX_OUT_NUM; i++)
-			{
-				if(cmdarray[i] == 0x31)
-				{
-					Some_Peripheral.Set_Relay(i,on);
-				}
-				else if(cmdarray[i] == 0x30)
-				{
-					Some_Peripheral.Set_Relay(i,off);
-				}
-				else
-				{
-					Serial.println("error!");
-					Serial.println(String("cmdarray[") + i +"]=" + cmdarray[i]);
-				}
-			}
-			memset(cmd16array, '0', sizeof(cmd16array));
-			//读输出IO的状态
-			for (int i = 0; i < MAX_OUT_NUM; i++)
-			{
-				if (digitalRead(OUT_NUM_LIST[i]) == LOW)
-				{
-					cmd16array[i] = '1';
-				}
-				else if (digitalRead(OUT_NUM_LIST[i]) == HIGH)
-				{
-					cmd16array[i] = '0';
-				}
-			}
+		// 	for (size_t i = 0; i < MAX_OUT_NUM; i++)
+		// 	{
+		// 		if(cmdarray[i] == 0x31)
+		// 		{
+		// 			Some_Peripheral.Set_Relay(i,on);
+		// 		}
+		// 		else if(cmdarray[i] == 0x30)
+		// 		{
+		// 			Some_Peripheral.Set_Relay(i,off);
+		// 		}
+		// 		else
+		// 		{
+		// 			Serial.println("error!");
+		// 			Serial.println(String("cmdarray[") + i +"]=" + cmdarray[i]);
+		// 		}
+		// 	}
+		// 	memset(cmd16array, '0', sizeof(cmd16array));
+		// 	//读输出IO的状态
+		// 	for (int i = 0; i < MAX_OUT_NUM; i++)
+		// 	{
+		// 		if (digitalRead(OUT_NUM_LIST[i]) == LOW)
+		// 		{
+		// 			cmd16array[i] = '1';
+		// 		}
+		// 		else if (digitalRead(OUT_NUM_LIST[i]) == HIGH)
+		// 		{
+		// 			cmd16array[i] = '0';
+		// 		}
+		// 	}
 
-			// 发送群控指令应答
-			JSONVar AckObject;
+		// 	// 发送群控指令应答
+		// 	JSONVar AckObject;
 
-			IMEI = modem.getIMEI();
-			AckObject["IMEI"] = IMEI;
-			Serial.println(String("IMEI:") + IMEI);
+		// 	IMEI = modem.getIMEI();
+		// 	AckObject["IMEI"] = IMEI;
+		// 	Serial.println(String("IMEI:") + IMEI);
 
-			String DO16Sta(cmd16array);
-			Serial.println(String("DO16Sta:") + DO16Sta);
+		// 	String DO16Sta(cmd16array);
+		// 	Serial.println(String("DO16Sta:") + DO16Sta);
 
-			AckObject["DO16Sta"] = DO16Sta;
-			// AckObject["DO16Sta"] = cmd16array;
+		// 	AckObject["DO16Sta"] = DO16Sta;
+		// 	// AckObject["DO16Sta"] = cmd16array;
 			
-			Serial.print("AckObject.keys() = ");
-			Serial.println(AckObject.keys());
-			// JSON.stringify(myVar) can be used to convert the json var to a String
-			String jsonString1 = JSON.stringify(AckObject);//把json格式数据转换为字符串就用这个方法
-			Serial.print("JSON.stringify(myObject) = ");
-			Serial.println(jsonString1);
-			// client.print(jsonString1);
-			// char *sendBuf;
-			// int datalength = jsonString1.length() + 1;
-			// sendBuf = (char *)malloc(datalength);
-			// jsonString1.toCharArray(sendBuf, datalength);
-			// client.write((unsigned char *)sendBuf, datalength);
-			// free(sendBuf);
-			SendDataToSever(jsonString1);
-		}
-		if (cmdObject.hasOwnProperty("DONum"))
-		{
-			int ChNum = (int)cmdObject["DONum"];
-			if (cmdObject.hasOwnProperty("sta"))
-			{
-				int sta = (int)cmdObject["sta"];
-				if (sta == 1)
-				{
-					switch (ChNum)
-					{
-					case 255:
-						Some_Peripheral.Set_Relay(0,on);
-						Some_Peripheral.Set_Relay(1,on);
-						break;
-					case 1:
-						Some_Peripheral.Set_Relay(0,on);
-						break;
-					case 2:
-						Some_Peripheral.Set_Relay(1,on);
-						break;
-					default:
-						break;
-					}
-				}
-				else if (sta == 0)
-				{
-					switch (ChNum)
-					{
-					case 255:
-						Some_Peripheral.Set_Relay(0,off);
-						Some_Peripheral.Set_Relay(1,off);
-						break;
-					case 1:
-						Some_Peripheral.Set_Relay(0,off);
-						break;
-					case 2:
-						Some_Peripheral.Set_Relay(1,off);
-						break;
-					default:
-						break;
-					}
-				}
+		// 	Serial.print("AckObject.keys() = ");
+		// 	Serial.println(AckObject.keys());
+		// 	// JSON.stringify(myVar) can be used to convert the json var to a String
+		// 	String jsonString1 = JSON.stringify(AckObject);//把json格式数据转换为字符串就用这个方法
+		// 	Serial.print("JSON.stringify(myObject) = ");
+		// 	Serial.println(jsonString1);
+		// 	// client.print(jsonString1);
+		// 	// char *sendBuf;
+		// 	// int datalength = jsonString1.length() + 1;
+		// 	// sendBuf = (char *)malloc(datalength);
+		// 	// jsonString1.toCharArray(sendBuf, datalength);
+		// 	// client.write((unsigned char *)sendBuf, datalength);
+		// 	// free(sendBuf);
+		// 	SendDataToSever(jsonString1);
+		// }
+		// if (cmdObject.hasOwnProperty("DONum"))
+		// {
+		// 	int ChNum = (int)cmdObject["DONum"];
+		// 	if (cmdObject.hasOwnProperty("sta"))
+		// 	{
+		// 		int sta = (int)cmdObject["sta"];
+		// 		if (sta == 1)
+		// 		{
+		// 			switch (ChNum)
+		// 			{
+		// 			case 255:
+		// 				Some_Peripheral.Set_Relay(0,on);
+		// 				Some_Peripheral.Set_Relay(1,on);
+		// 				break;
+		// 			case 1:
+		// 				Some_Peripheral.Set_Relay(0,on);
+		// 				break;
+		// 			case 2:
+		// 				Some_Peripheral.Set_Relay(1,on);
+		// 				break;
+		// 			default:
+		// 				break;
+		// 			}
+		// 		}
+		// 		else if (sta == 0)
+		// 		{
+		// 			switch (ChNum)
+		// 			{
+		// 			case 255:
+		// 				Some_Peripheral.Set_Relay(0,off);
+		// 				Some_Peripheral.Set_Relay(1,off);
+		// 				break;
+		// 			case 1:
+		// 				Some_Peripheral.Set_Relay(0,off);
+		// 				break;
+		// 			case 2:
+		// 				Some_Peripheral.Set_Relay(1,off);
+		// 				break;
+		// 			default:
+		// 				break;
+		// 			}
+		// 		}
 
-				//发送应答
-				JSONVar AckObject;
-				IMEI = modem.getIMEI();
-				AckObject["IMEI"] = IMEI;
-				AckObject["DONum"] = ChNum;
-				AckObject["sta"] = sta;
-				Serial.print("AckObject.keys() = ");
-				Serial.println(AckObject.keys());
-				// JSON.stringify(myVar) can be used to convert the json var to a String
-				String jsonString1 = JSON.stringify(AckObject);
-				Serial.print("JSON.stringify(myObject) = ");
-				Serial.println(jsonString1);
-				//client.print(jsonString1);
-				SendDataToSever(jsonString1);
-			}
-		}
+		// 		//发送应答
+		// 		JSONVar AckObject;
+		// 		IMEI = modem.getIMEI();
+		// 		AckObject["IMEI"] = IMEI;
+		// 		AckObject["DONum"] = ChNum;
+		// 		AckObject["sta"] = sta;
+		// 		Serial.print("AckObject.keys() = ");
+		// 		Serial.println(AckObject.keys());
+		// 		// JSON.stringify(myVar) can be used to convert the json var to a String
+		// 		String jsonString1 = JSON.stringify(AckObject);
+		// 		Serial.print("JSON.stringify(myObject) = ");
+		// 		Serial.println(jsonString1);
+		// 		//client.print(jsonString1);
+		// 		SendDataToSever(jsonString1);
+		// 	}
+		// }
 	}
 }
 

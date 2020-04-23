@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "fun_periph.h"
 
-#define RTC_FUN 	false
+#define RTC_FUN 	true
 #define TEST        true
 
 
