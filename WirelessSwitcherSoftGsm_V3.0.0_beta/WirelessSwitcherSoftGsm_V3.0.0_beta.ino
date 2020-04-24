@@ -38,6 +38,8 @@
 #include "Private_Timer.h"
 #include "Private_RTC.h"
 #include "public.h"
+#include "User_CMDprocess.h"
+#include "Response_receipt.h"
 
 #define TIMER_TEST 	true
 

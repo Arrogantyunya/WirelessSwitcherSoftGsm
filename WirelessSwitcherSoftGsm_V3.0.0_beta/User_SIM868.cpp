@@ -22,6 +22,8 @@
 #include <TinyGsmClient.h>
 #include <Arduino_JSON.h>
 #include "Private_RTC.h"
+#include "User_CMDprocess.h"
+#include "Response_receipt.h"
 
 SIM868 Sim868;
 
@@ -31,6 +33,16 @@ SIM868 Sim868;
 
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
+
+String IMEI = "";//国际移动设备识别码
+String SIMCCID = "";//sim卡的识别标识.
+String LOCData = "";//LOCData
+String SoftwareVer = "V3.0.0";//软件版本
+String HardwareVer = "V1.0.0";//硬件版本
+int CSQ = 0;//信号质量
+char cmd16array[16] = {0};
+const char *cmdarray = cmd16array;
+const unsigned int OUT_NUM_LIST[MAX_OUT_NUM] = {KCZJ1, KCZJ2};
 
 /*
  @brief     : SIM868的初始化（电源的开启，启动或关闭GPS电源，配置GPS参数）
@@ -251,22 +263,14 @@ bool SIM868::Connect_Server(void)
 			}
 			Serial.println("-------");
 
-			JSONVar myObject;
-			myObject["CSQ"] = CSQ;
-			myObject["IMEI"] = IMEI;
-			myObject["CCID"] = SIMCCID;
-			myObject["LBS"] = LOCData;
-			myObject["DOnum"] = MAX_OUT_NUM;
-			myObject["SwVer"] = SoftwareVer;
-			myObject["HwVer"] = HardwareVer;
-			Serial.print("myObject.keys() = ");
-			Serial.println(myObject.keys());
+			// Receipt.Receipt_of_Online(CSQ,IMEI,SIMCCID,LOCData,MAX_OUT_NUM,SoftwareVer,HardwareVer);
+			Receipt.Receipt_of_Online();
 
-			// JSON.stringify(myVar) can be used to convert the json var to a String
-			String jsonString = JSON.stringify(myObject);
-			Serial.println("JSON.stringify(myObject) = " + jsonString);
-			// Serial.println(jsonString);
-			SendDataToSever(jsonString);
+			// // JSON.stringify(myVar) can be used to convert the json var to a String
+			// String jsonString = JSON.stringify(myObject);
+			// Serial.println("JSON.stringify(myObject) = " + jsonString);
+			// // Serial.println(jsonString);
+			// SendDataToSever(jsonString);
 
 			IMEI.trim();//删除头尾空白符的字符串。
 			// Serial.println("IMEI:" + IMEI);
@@ -333,9 +337,9 @@ void SIM868::Client_ReceiveCMD()
 			String Res = client.readStringUntil('\n');
 			Serial.println("");
 			Serial.println("Get information sent by the Server... ");
-			Serial.println("Res:" + Res);
+			Serial.println("Res:" + Res + "\n");Serial.flush();
 
-			Sim868.ReceiveCMD_Processing(Res);//SIM868接收命令处理
+			Sim868.ReceiveCMD_Analysis(Res);//SIM868接收命令处理
 
 			// Res.trim();//删除头尾空白符的字符串。
 		}
@@ -350,7 +354,7 @@ void SIM868::Client_ReceiveCMD()
  1.client.write((unsigned char *)sendBuf, datalength)
  【AT指令调用过多，自行查阅】
  */
-void SIM868::ReceiveCMD_Processing(String res)
+void SIM868::ReceiveCMD_Analysis(String res)
 {
 	if (res.equals("") == false)
 	{
@@ -368,26 +372,22 @@ void SIM868::ReceiveCMD_Processing(String res)
 			Serial.println("Parsing input failed! <SIM868::ReceiveCMD_Processing()>");
 			return;
 		}
-		Serial.println(); // prints: object
+		// Serial.println(); // prints: object
 		Serial.println("JSON.typeof(myObject) = " + JSON.typeof(cmdObject));
 
 		// myObject.hasOwnProperty(key) checks if the object contains an entry for key判断自身属性是否存在
 		if (cmdObject.hasOwnProperty("rtc"))
 		{
 			ReviceServerTimeoutNum = 0;
+			Serial.println("");
 			Serial.print("cmdObject[\"rtc\"] = ");
 			Serial.println(cmdObject["rtc"]);
 			
 			//String DataString = JSON.stringify(cmdObject["rtc"]);
 			#if RTC_FUN
 			const char *DataArray = (const char *)cmdObject["rtc"];
-			unsigned char RTC[7] = {0};
 
-			for (size_t i = 0; i < 7; i++)
-			{
-				RTC[i] = (DataArray[2*i] - '0') * 10 + (DataArray[(2*i)+1] - '0');
-			}
-			Private_RTC.Update_RTC(RTC);
+			cmd.Save_Rtc(DataArray);//
 
 			// noInterrupts();
 			// time_t Alarm_Time = 0;
@@ -396,130 +396,32 @@ void SIM868::ReceiveCMD_Processing(String res)
 			// interrupts();
 			#endif
 		}
+		if (cmdObject.hasOwnProperty("DONum"))//单控
+		{
+			if (cmdObject.hasOwnProperty("sta"))
+			{
+				int Which_DO = (int)cmdObject["DONum"];
+				int Sta = (int)cmdObject["sta"];
 
-		// if (cmdObject.hasOwnProperty("DO16Sta"))
-		// {
-		// 	Serial.print("cmdObject[\"DO16Sta\"] = ");
-		// 	Serial.println(cmdObject["DO16Sta"]);
-		// 	cmdarray = (const char *)cmdObject["DO16Sta"];
+				cmd.Individual_Control(Which_DO,Sta);//单独控制
+			}
+		}
+		else if (cmdObject.hasOwnProperty("DO16Sta"))//群控
+		{
+			Serial.print("cmdObject[\"DO16Sta\"] = ");
+			Serial.println(cmdObject["DO16Sta"]);
+			cmdarray = (const char *)cmdObject["DO16Sta"];
+
+			cmd.Batch_Control(cmdarray);//批量控制
+		}
+		else if (cmdObject.hasOwnProperty("Mode"))//模式控制
+		{
 			
-		// 	for (size_t i = 0; i < MAX_OUT_NUM; i++)
-		// 	{
-		// 		if(cmdarray[i] == 0x31)
-		// 		{
-		// 			Some_Peripheral.Set_Relay(i,on);
-		// 		}
-		// 		else if(cmdarray[i] == 0x30)
-		// 		{
-		// 			Some_Peripheral.Set_Relay(i,off);
-		// 		}
-		// 		else
-		// 		{
-		// 			Serial.println("error!");
-		// 			Serial.println(String("cmdarray[") + i +"]=" + cmdarray[i]);
-		// 		}
-		// 	}
-		// 	memset(cmd16array, '0', sizeof(cmd16array));
-		// 	//读输出IO的状态
-		// 	for (int i = 0; i < MAX_OUT_NUM; i++)
-		// 	{
-		// 		if (digitalRead(OUT_NUM_LIST[i]) == LOW)
-		// 		{
-		// 			cmd16array[i] = '1';
-		// 		}
-		// 		else if (digitalRead(OUT_NUM_LIST[i]) == HIGH)
-		// 		{
-		// 			cmd16array[i] = '0';
-		// 		}
-		// 	}
-
-		// 	// 发送群控指令应答
-		// 	JSONVar AckObject;
-
-		// 	IMEI = modem.getIMEI();
-		// 	AckObject["IMEI"] = IMEI;
-		// 	Serial.println(String("IMEI:") + IMEI);
-
-		// 	String DO16Sta(cmd16array);
-		// 	Serial.println(String("DO16Sta:") + DO16Sta);
-
-		// 	AckObject["DO16Sta"] = DO16Sta;
-		// 	// AckObject["DO16Sta"] = cmd16array;
-			
-		// 	Serial.print("AckObject.keys() = ");
-		// 	Serial.println(AckObject.keys());
-		// 	// JSON.stringify(myVar) can be used to convert the json var to a String
-		// 	String jsonString1 = JSON.stringify(AckObject);//把json格式数据转换为字符串就用这个方法
-		// 	Serial.print("JSON.stringify(myObject) = ");
-		// 	Serial.println(jsonString1);
-		// 	// client.print(jsonString1);
-		// 	// char *sendBuf;
-		// 	// int datalength = jsonString1.length() + 1;
-		// 	// sendBuf = (char *)malloc(datalength);
-		// 	// jsonString1.toCharArray(sendBuf, datalength);
-		// 	// client.write((unsigned char *)sendBuf, datalength);
-		// 	// free(sendBuf);
-		// 	SendDataToSever(jsonString1);
-		// }
-		// if (cmdObject.hasOwnProperty("DONum"))
-		// {
-		// 	int ChNum = (int)cmdObject["DONum"];
-		// 	if (cmdObject.hasOwnProperty("sta"))
-		// 	{
-		// 		int sta = (int)cmdObject["sta"];
-		// 		if (sta == 1)
-		// 		{
-		// 			switch (ChNum)
-		// 			{
-		// 			case 255:
-		// 				Some_Peripheral.Set_Relay(0,on);
-		// 				Some_Peripheral.Set_Relay(1,on);
-		// 				break;
-		// 			case 1:
-		// 				Some_Peripheral.Set_Relay(0,on);
-		// 				break;
-		// 			case 2:
-		// 				Some_Peripheral.Set_Relay(1,on);
-		// 				break;
-		// 			default:
-		// 				break;
-		// 			}
-		// 		}
-		// 		else if (sta == 0)
-		// 		{
-		// 			switch (ChNum)
-		// 			{
-		// 			case 255:
-		// 				Some_Peripheral.Set_Relay(0,off);
-		// 				Some_Peripheral.Set_Relay(1,off);
-		// 				break;
-		// 			case 1:
-		// 				Some_Peripheral.Set_Relay(0,off);
-		// 				break;
-		// 			case 2:
-		// 				Some_Peripheral.Set_Relay(1,off);
-		// 				break;
-		// 			default:
-		// 				break;
-		// 			}
-		// 		}
-
-		// 		//发送应答
-		// 		JSONVar AckObject;
-		// 		IMEI = modem.getIMEI();
-		// 		AckObject["IMEI"] = IMEI;
-		// 		AckObject["DONum"] = ChNum;
-		// 		AckObject["sta"] = sta;
-		// 		Serial.print("AckObject.keys() = ");
-		// 		Serial.println(AckObject.keys());
-		// 		// JSON.stringify(myVar) can be used to convert the json var to a String
-		// 		String jsonString1 = JSON.stringify(AckObject);
-		// 		Serial.print("JSON.stringify(myObject) = ");
-		// 		Serial.println(jsonString1);
-		// 		//client.print(jsonString1);
-		// 		SendDataToSever(jsonString1);
-		// 	}
-		// }
+		}
+		else
+		{
+			Serial.println("Instruction error!!! nonexistent instruction");
+		}
 	}
 }
 
@@ -551,20 +453,11 @@ void SIM868::Send_Heartbeat_Regularly(void)
 		Serial.println("");
 		Serial.println("Send Heatbeat! <SIM868::Send_Heartbeat_Regularly()>");
         SendHeatBeatFlag = false;
-        JSONVar AckObject;
-        memset(cmd16array, 0, sizeof(cmd16array));
-        AckObject["IMEI"] = IMEI;
-        AckObject["DO16Sta"] = cmd16array;
-        Serial.print("AckObject.keys() = ");
-        Serial.println(AckObject.keys());
-        // JSON.stringify(myVar) can be used to convert the json var to a String
-        String jsonString1 = JSON.stringify(AckObject);
-        Serial.print("JSON.stringify(myObject) = ");
-        Serial.println(jsonString1);
+
         //client.print(jsonString1);
         if (client.connected())
         {
-            Sim868.SendDataToSever(jsonString1);
+			Receipt.Heartbeat_Package_Receipt();//心跳包回执
         }
         ReviceServerTimeoutNum++;
         Serial.println(String("ReviceServerTimeoutNum:") + ReviceServerTimeoutNum);
