@@ -40,8 +40,10 @@
 #include "public.h"
 #include "User_CMDprocess.h"
 #include "Response_receipt.h"
+#include "Memory.h"
 
 #define TIMER_TEST 	true
+#define USE_IWDG	false
 
 #if RTC_FUN
 // RTClock InRtc(RTCSEL_LSE); // initialise RTC
@@ -67,7 +69,19 @@ void setup()
 	Some_Peripheral.Peripheral_GPIO_Pinmode();//设置外设的GPIO的引脚模式
 	Some_Peripheral.Peripheral_GPIO_Config();//外设的GPIO的初始状态
 
-	Serial.begin(9600);
+	Serial.begin(115200);
+#if USE_IWDG
+	/*配置IWDG*/
+	iwdg_init(IWDG_PRE_256, 2000); //6.5ms * 1000 = 6500ms.
+#endif
+
+	EEPROM_Operation.EEPROM_GPIO_Config();		//设置EEPROM读写引脚
+
+#if	EEPROM_RESET
+	EEPROM_Operation.EEPROM_Reset();//重置EEPROM的所有值【测试使用】
+#endif
+
+	bkp_init();	//备份寄存器初始化使能
 
 	Sim868.Init(); //初始化
 
@@ -81,12 +95,19 @@ void setup()
 	// Alarm_Time = InRtc.getTime();
 	// InRtc.createAlarm(RTC_Interrupt, Alarm_Time + 60);
 	// interrupts();
-	Serial.println("RTC_FUN");
+	// unsigned short Year = 2020;
+	// unsigned char Month = 4;
+	// unsigned char Day = 25;
+	// Serial.println(String("WEEK:") + Private_RTC.RTC_Get_Week(Year,Month,Day));
+	// Serial.println(String("WEEK:") + Private_RTC.WeekDayCount(Year,Month,Day));
+	// Serial.println(String("WEEK:") + Private_RTC.Get_Week(Year,Month,Day));
 #endif
 
 	// Get GPRS Moudle Voltage
 	GPRSV = Sim868.getBattVol();//得到电压
 	Serial.println(String("GPRS Moudle Vol:") + GPRSV + "mv");
+
+	strcpy(Alarm_Array[1].Begin,"08:00:00");
 }
 
 void loop()
@@ -125,6 +146,9 @@ void loop()
 	Sim868.Client_Check_Connection();//SIM868客户端检查连接状态
 
 	// Sim868.Send_Heartbeat_Regularly();//定时发送心跳包
+	// Serial.println("...");
+	// delay(500);
+	
 }
 
 #if RTC_FUN

@@ -30,7 +30,6 @@ const int port = 6000;
 //int port = 48979;
 //const char server[] = "148.70.126.68";
 
-
 class GPRS {
 private:
     /* data */
@@ -48,7 +47,6 @@ public:
     bool Sever_Connect_flag = false;//服务器连接标志位
     unsigned int Try_Connect_Sever_Num = 0; //尝试连接服务器次数
     unsigned int ReviceServerTimeoutNum = 0;//接收服务器信息超时计数
-
 
 
     void Init(void);            //初始化
@@ -76,5 +74,7 @@ extern int CSQ;//信号质量
 extern char cmd16array[16];
 extern const char *cmdarray;
 extern const unsigned int OUT_NUM_LIST[MAX_OUT_NUM];
+extern int Decice_Mode;//设备工作模式
+extern int Decice_States;//设备工作状态
 
 #endif

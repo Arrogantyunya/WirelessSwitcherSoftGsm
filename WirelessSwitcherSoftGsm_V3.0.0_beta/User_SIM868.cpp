@@ -24,13 +24,13 @@
 #include "Private_RTC.h"
 #include "User_CMDprocess.h"
 #include "Response_receipt.h"
+#include "Memory.h"
 
 SIM868 Sim868;
 
 // or Software Serial on Uno, Nano
 //#include <SoftwareSerial.h>
 //SoftwareSerial SerialAT(2, 3); // RX, TX
-
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
 
@@ -41,8 +41,11 @@ String SoftwareVer = "V3.0.0";//软件版本
 String HardwareVer = "V1.0.0";//硬件版本
 int CSQ = 0;//信号质量
 char cmd16array[16] = {0};
-const char *cmdarray = cmd16array;
+const char *cmdarray;
+// const char *cmdarray = cmd16array;
 const unsigned int OUT_NUM_LIST[MAX_OUT_NUM] = {KCZJ1, KCZJ2};
+int Decice_Mode = 0;//设备工作模式
+int Decice_States = 0;//设备工作状态
 
 /*
  @brief     : SIM868的初始化（电源的开启，启动或关闭GPS电源，配置GPS参数）
@@ -264,7 +267,7 @@ bool SIM868::Connect_Server(void)
 			Serial.println("-------");
 
 			// Receipt.Receipt_of_Online(CSQ,IMEI,SIMCCID,LOCData,MAX_OUT_NUM,SoftwareVer,HardwareVer);
-			Receipt.Receipt_of_Online();
+			Receipt.Receipt_of_Online();//上线报告
 
 			// // JSON.stringify(myVar) can be used to convert the json var to a String
 			// String jsonString = JSON.stringify(myObject);
@@ -416,7 +419,33 @@ void SIM868::ReceiveCMD_Analysis(String res)
 		}
 		else if (cmdObject.hasOwnProperty("Mode"))//模式控制
 		{
-			
+			Decice_Mode = (int)cmdObject["Mode"];
+			Decice_Timing_Mode.Save_DeviceMode((unsigned char)Decice_Mode);//保存设备状态至EEP
+
+			switch (Decice_Mode)
+			{
+				case 0x00:
+				{
+					Serial.println("Enter Stop Mode");
+					break;
+				}
+				case 0x01:
+				{
+					Serial.println("Enter General Control Mode");
+					cmd.General_Control_Mode(res);//通用控制模式
+					break;
+				}
+				case 0x02:
+				{	
+					Serial.println("Enter Weekly Control Mode");
+					break;
+				}
+				default:
+				{
+					Serial.println("Non existent Decice_Mode!");Serial.println(String("Decice_Mode = ") + Decice_Mode);
+					break;
+				}
+			}
 		}
 		else
 		{

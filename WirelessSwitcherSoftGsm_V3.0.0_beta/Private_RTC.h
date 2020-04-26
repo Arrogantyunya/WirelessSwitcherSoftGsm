@@ -14,6 +14,9 @@ public:
     void Init_Set_Alarm(void);
     void Set_Alarm(void);
 	void Set_onehour_Alarm(void);
+    unsigned char RTC_Get_Week(unsigned short year,unsigned char month,unsigned char day);
+    int WeekDayCount(int _year, int _mon, int _day);  
+    int Get_Week(int Year,int Month ,int Day);
 };
 
 extern date Private_RTC;
