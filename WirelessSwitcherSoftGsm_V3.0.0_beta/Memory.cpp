@@ -21,6 +21,7 @@ Soft_Hard_Vertion Vertion;
 Timing_Mode Decice_Timing_Mode;
 
 struct ALARM Alarm_Array[5];
+char Week[7] = {0};
 
 /*
  @brief     : 设置EEPROM读写引脚
@@ -104,4 +105,90 @@ bool Timing_Mode::Clean_DeciceMode(void)
 		Serial.println("Clean DeviceMode Fail <Save_DeviceMode>");
 		return false;
 	}
+}
+
+/*
+ @brief     : 保存闹钟启用
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Save_Alarm_Used(unsigned char count)
+{
+	EEPROM_Write_Enable();
+	switch (count)
+	{
+	case 0: AT24CXX_WriteOneByte(ALARM_0_USED_ADDR, 0x01);break;
+	case 1: AT24CXX_WriteOneByte(ALARM_1_USED_ADDR, 0x01);break;
+	case 2: AT24CXX_WriteOneByte(ALARM_2_USED_ADDR, 0x01);break;
+	case 3: AT24CXX_WriteOneByte(ALARM_3_USED_ADDR, 0x01);break;
+	case 4: AT24CXX_WriteOneByte(ALARM_4_USED_ADDR, 0x01);break;
+	default:Serial.println("Non-existent ALARM_USED!!!");break;
+	}
+	EEPROM_Write_Disable();
+
+	switch (count)
+	{
+	case 0: if(AT24CXX_ReadOneByte(ALARM_0_USED_ADDR) == 0x01){Serial.println("Save ALARM_0_USED Success");return true;}break;
+	case 1: if(AT24CXX_ReadOneByte(ALARM_1_USED_ADDR) == 0x01){Serial.println("Save ALARM_1_USED Success");return true;}break;
+	case 2: if(AT24CXX_ReadOneByte(ALARM_2_USED_ADDR) == 0x01){Serial.println("Save ALARM_2_USED Success");return true;}break;
+	case 3: if(AT24CXX_ReadOneByte(ALARM_3_USED_ADDR) == 0x01){Serial.println("Save ALARM_3_USED Success");return true;}break;
+	case 4: if(AT24CXX_ReadOneByte(ALARM_4_USED_ADDR) == 0x01){Serial.println("Save ALARM_4_USED Success");return true;}break;
+	default:Serial.println("Non-existent ALARM_USED!!!");break;
+	}
+
+	return false;
+}
+
+/*
+ @brief     : 读取闹钟是否启用
+ @para      : 无
+ @return    : 无
+ */
+unsigned char Timing_Mode::Read_Alarm_Used(unsigned char count)
+{
+	switch (count)
+	{
+	case 0:return AT24CXX_ReadOneByte(ALARM_0_USED_ADDR); break;
+	case 1:return AT24CXX_ReadOneByte(ALARM_1_USED_ADDR); break;
+	case 2:return AT24CXX_ReadOneByte(ALARM_2_USED_ADDR); break;
+	case 3:return AT24CXX_ReadOneByte(ALARM_3_USED_ADDR); break;
+	case 4:return AT24CXX_ReadOneByte(ALARM_4_USED_ADDR); break;
+	default:break;
+	}
+}
+
+/*
+ @brief     : 清除所有的闹钟启用
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Clean_Alarm_Used(void)
+{
+	EEPROM_Write_Enable();
+	for (size_t i = 0; i < 5; i++)
+	{
+		switch (i)
+		{
+		case 0: AT24CXX_WriteOneByte(ALARM_0_USED_ADDR, 0x00);break;
+		case 1: AT24CXX_WriteOneByte(ALARM_1_USED_ADDR, 0x00);break;
+		case 2: AT24CXX_WriteOneByte(ALARM_2_USED_ADDR, 0x00);break;
+		case 3: AT24CXX_WriteOneByte(ALARM_3_USED_ADDR, 0x00);break;
+		case 4: AT24CXX_WriteOneByte(ALARM_4_USED_ADDR, 0x00);break;
+		default:break;
+		}
+	}
+	EEPROM_Write_Disable();
+	if( AT24CXX_ReadOneByte(ALARM_0_USED_ADDR) == 0x00 && AT24CXX_ReadOneByte(ALARM_1_USED_ADDR) == 0x00 &&
+		AT24CXX_ReadOneByte(ALARM_2_USED_ADDR) == 0x00 && AT24CXX_ReadOneByte(ALARM_3_USED_ADDR) == 0x00 &&
+		AT24CXX_ReadOneByte(ALARM_4_USED_ADDR) == 0x00)
+	{
+		Serial.println("Claen Alarm Used Success");
+		return true;
+	}
+	else
+	{
+		Serial.println("Claen Alarm Used Fail");
+		return false;
+	}
+	
 }

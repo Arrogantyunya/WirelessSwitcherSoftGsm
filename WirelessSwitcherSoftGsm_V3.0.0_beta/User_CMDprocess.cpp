@@ -154,6 +154,13 @@ bool CMD::General_Control_Mode(String res)
         return false;
     }
 
+    /* 清除已经保存的闹钟启动 */
+    if(!Decice_Timing_Mode.Clean_Alarm_Used())
+    {
+        return false;
+    }
+
+    /* 此处通过for循环分别对结构体数组内的数组赋值 */
     for (size_t i = 0; i < J_General_Control_Mode.length(); i++)
     {
         //5个时间段的开始时间
@@ -173,7 +180,12 @@ bool CMD::General_Control_Mode(String res)
         Str_General_Control_Mode_DoUsed.toCharArray(C_General_Control_Mode_DoUsed,Str_General_Control_Mode_DoUsed.length() + 1);
         strcpy(Alarm_Array[i].DoUsed,J_General_Control_Mode[i]["DoUsed"]);
         Serial.println(String("Alarm_Array[") + i + "].DoUsed = " + Alarm_Array[i].DoUsed);
+
+        // 保存闹钟i是否启动的EEPROM
+        Decice_Timing_Mode.Save_Alarm_Used(i);
     }
+
+
     return true;
     
     // Serial.print("J_General_Control_Mode[0] = ");
