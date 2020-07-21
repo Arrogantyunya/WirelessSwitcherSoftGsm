@@ -107,7 +107,7 @@ void setup()
 	GPRSV = Sim868.getBattVol();//得到电压
 	Serial.println(String("GPRS Moudle Vol:") + GPRSV + "mv");
 
-	strcpy(Alarm_Array[1].Begin,"08:00:00");
+	// strcpy(Alarm_Array[1].Begin,"08:00:00");
 }
 
 void loop()
@@ -146,9 +146,8 @@ void loop()
 	Sim868.Client_Check_Connection();//SIM868客户端检查连接状态
 
 	// Sim868.Send_Heartbeat_Regularly();//定时发送心跳包
-	// Serial.println("...");
-	// delay(500);
-	
+
+	Mode_execution();//模式执行
 }
 
 #if RTC_FUN
@@ -158,3 +157,31 @@ void loop()
 // 	Serial.println("RTC alarm interrupt");
 // }
 #endif
+
+/*
+ @brief     : 模式执行
+ @param     : None
+ @return    : None
+ @Called function：None
+ */
+void Mode_execution(void)
+{
+	Decice_Mode = Decice_Timing_Mode.Read_DeviceMode();
+
+	if(Decice_Mode == General_Control_Mode)
+	{
+		
+	}
+	else if(Decice_Mode == Week_Control_Mode)
+	{
+
+	}
+	else if(Decice_Mode == Stop_Control_Mode)
+	{
+
+	}
+	else
+	{
+		Serial.println("Mode error <Mode_execution>");
+	}
+}

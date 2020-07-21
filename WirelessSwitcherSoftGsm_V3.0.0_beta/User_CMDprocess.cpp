@@ -124,7 +124,7 @@ void CMD::Batch_Control(const char* Cmd_data)
  @return    : None
  @Called function：None
  */
-bool CMD::General_Control_Mode(String res)
+bool CMD::General_Control_Mode_Save(String res)
 {
     /* 5个时间段的开始时间 */
     String Str_General_Control_Mode_Begin;//定义String数组
@@ -166,23 +166,36 @@ bool CMD::General_Control_Mode(String res)
         //5个时间段的开始时间
         Str_General_Control_Mode_Begin = J_General_Control_Mode[i]["Begin"];
         Str_General_Control_Mode_Begin.toCharArray(C_General_Control_Mode_Begin,Str_General_Control_Mode_Begin.length() + 1);
-        strcpy(Alarm_Array[i].Begin,C_General_Control_Mode_Begin);
+        strcpy(Alarm_Array[i].Begin,C_General_Control_Mode_Begin);//
         Serial.println(String("Alarm_Array[") + i + "].Begin = " + Alarm_Array[i].Begin);
         
         //5个时间段的结束时间
         Str_General_Control_Mode_End = J_General_Control_Mode[i]["End"];
         Str_General_Control_Mode_End.toCharArray(C_General_Control_Mode_End,Str_General_Control_Mode_End.length() + 1);
-        strcpy(Alarm_Array[i].End,C_General_Control_Mode_End);
+        strcpy(Alarm_Array[i].End,C_General_Control_Mode_End);//
         Serial.println(String("Alarm_Array[") + i + "].End = " + Alarm_Array[i].End);
 
         //5个时间段的DoUsed
         Str_General_Control_Mode_DoUsed = J_General_Control_Mode[i]["DoUsed"];
         Str_General_Control_Mode_DoUsed.toCharArray(C_General_Control_Mode_DoUsed,Str_General_Control_Mode_DoUsed.length() + 1);
-        strcpy(Alarm_Array[i].DoUsed,J_General_Control_Mode[i]["DoUsed"]);
+        strcpy(Alarm_Array[i].DoUsed,J_General_Control_Mode[i]["DoUsed"]);//
         Serial.println(String("Alarm_Array[") + i + "].DoUsed = " + Alarm_Array[i].DoUsed);
 
         // 保存闹钟i是否启动的EEPROM
         Decice_Timing_Mode.Save_Alarm_Used(i);
+    }
+
+    //保存通用模式的间隔时间至EEP
+    Mode1_interval = (int)Json_Time["interval"];
+	if(!Decice_Timing_Mode.Save_Mode1_interval((unsigned char)Mode1_interval))
+    {
+        return false;
+    }
+
+    Mode1_RetryCnt = (int)Json_Time["RetryCnt"];
+    if(!Decice_Timing_Mode.Save_Mode1_RetryCnt((unsigned char)Mode1_RetryCnt))
+    {
+        return false;
     }
 
 
@@ -211,4 +224,27 @@ bool CMD::General_Control_Mode(String res)
 
     // Serial.print("JSON.typeof(J_General_Control_Mode[1][\"DoUsed\"]) = ");
     // Serial.println(JSON.typeof(J_General_Control_Mode[1]["DoUsed"])); // prints: array
+}
+
+/*
+ @brief     : 按周控制模式
+ @param     : None
+ @return    : None
+ @Called function：None
+ */
+bool Week_Control_Mode_Save(String res)
+{
+
+}
+
+
+/*
+ @brief     : 停止模式
+ @param     : None
+ @return    : None
+ @Called function：None
+ */
+bool Stop_Control_Mode_Save(String res)
+{
+
 }

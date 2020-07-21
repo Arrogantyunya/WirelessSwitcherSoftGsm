@@ -29,6 +29,7 @@ void RECEIPT::Receipt_of_Online()
 {
     // {"CSQ":14,"IMEI":"867857035021067","CCID":"89860411101870509158","LBS":"3","DOnum":2,"SwVer":"V2.0.0","HwVer":"V1.0.0"}
     
+    Serial.println("");
     JSONVar myObject;
     myObject["CSQ"] = CSQ;
     myObject["IMEI"] = IMEI;
@@ -44,6 +45,8 @@ void RECEIPT::Receipt_of_Online()
     String jsonString = JSON.stringify(myObject);
     Serial.println("JSON.stringify(myObject) = " + jsonString);
     Sim868.SendDataToSever(jsonString);
+
+    Serial.println("<Receipt_of_Online>");
 }
 
 /*
@@ -55,6 +58,8 @@ void RECEIPT::Receipt_of_Online()
 void RECEIPT::Receipt_of_Individual_Control(int DOnum, int sta)
 {
     // {"IMEI":"867857035021067","DONum":2,"sta":1}
+
+    Serial.println("");
 
     JSONVar AckObject;
     // IMEI = modem.getIMEI();
@@ -69,6 +74,7 @@ void RECEIPT::Receipt_of_Individual_Control(int DOnum, int sta)
     Serial.println(jsonString1);
     //client.print(jsonString1);
     Sim868.SendDataToSever(jsonString1);
+    Serial.println("<Receipt_of_Individual_Control>");
 }
 
 /*
@@ -80,6 +86,7 @@ void RECEIPT::Receipt_of_Individual_Control(int DOnum, int sta)
 void RECEIPT::Receipt_of_Batch_Control()
 {
     // {"IMEI":"867857035021067","DO16Sta":"0000000000000000"}
+    Serial.println("");
 
     memset(cmd16array, '0', sizeof(cmd16array));
 	//读输出IO的状态
@@ -122,6 +129,7 @@ void RECEIPT::Receipt_of_Batch_Control()
 	// client.write((unsigned char *)sendBuf, datalength);
 	// free(sendBuf);
 	Sim868.SendDataToSever(jsonString1);
+    Serial.println("<Receipt_of_Batch_Control>");
 }
 
 /*
@@ -132,7 +140,42 @@ void RECEIPT::Receipt_of_Batch_Control()
  */
 void RECEIPT::General_Receipt(int Device_mode,int Device_Status)
 {
-    // {"IMEI":"867857035021067","Mode":1,"Status":1}
+    // {"IMEI":"867857035021067","Mode":0,"Status":1,"DO16Sta":"0000000000000000"}
+
+    Serial.println("");
+
+    memset(cmd16array, '0', sizeof(cmd16array));
+	//读输出IO的状态
+	for (int i = 0; i < MAX_OUT_NUM; i++)
+	{
+		if (digitalRead(OUT_NUM_LIST[i]) == LOW)
+		{
+			cmd16array[i] = '1';
+		}
+		else if (digitalRead(OUT_NUM_LIST[i]) == HIGH)
+		{
+			cmd16array[i] = '0';
+		}
+	}
+
+    JSONVar AckObject;
+    AckObject["IMEI"] = IMEI;
+    AckObject["Mode"] = Device_mode;
+    AckObject["Status"] = Device_Status;
+    String DO16Sta(cmd16array);
+	Serial.println(String("DO16Sta:") + DO16Sta);
+
+	AckObject["DO16Sta"] = DO16Sta;
+
+    Serial.print("AckObject.keys() = ");
+	Serial.println(AckObject.keys());
+	// JSON.stringify(myVar) can be used to convert the json var to a String
+	String jsonString1 = JSON.stringify(AckObject);//把json格式数据转换为字符串就用这个方法
+	Serial.print("JSON.stringify(myObject) = ");
+	Serial.println(jsonString1);
+
+    Sim868.SendDataToSever(jsonString1);
+    Serial.println("<General_Receipt>");
 }
 
 /*
@@ -144,6 +187,8 @@ void RECEIPT::General_Receipt(int Device_mode,int Device_Status)
 void  RECEIPT::Heartbeat_Package_Receipt()
 {
     // {"IMEI":"867857035021067"}
+    
+    Serial.println("");
 
     JSONVar AckObject;
     // memset(cmd16array, 0, sizeof(cmd16array));
@@ -157,4 +202,5 @@ void  RECEIPT::Heartbeat_Package_Receipt()
     Serial.println(jsonString1);
 
     Sim868.SendDataToSever(jsonString1);
+    Serial.println("<Heartbeat_Package_Receipt>");
 }

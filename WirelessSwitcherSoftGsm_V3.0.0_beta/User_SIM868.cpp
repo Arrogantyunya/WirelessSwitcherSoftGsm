@@ -76,8 +76,14 @@ void SIM868::Init(void)
     GSM_Search_Net_Flag = false;
     GSM_Enter_Net_flag = false;
     //Unlock your SIM card with a PIN
-    //modem.simUnlock("1234");
-
+    // if(modem.simUnlock("1234"))
+	// {
+	// 	Serial.println("simUnlock Success");
+	// }
+	// else
+	// {
+	// 	Serial.println("simUnlock Fail");
+	// }
     Sever_Connect_flag = false;
 }
 
@@ -162,8 +168,18 @@ bool SIM868::Access_Net(void)
         Serial.println(" Success <SIM868::Access_Net()>");
         GSM_Enter_Net_flag = true;
         //send SMS
-        //modem.sendSMS("+8613577182976", "this is SIM868");
-        return true;
+		// String phone = "+8615887824280";
+		// String Alarm = "Gas over threshold alarm!! H2S:50.0;CH4:50.0;CO2:50.0;NH3:50.0;TEMP:50.0;PM2.5:50.0";
+        // // if(modem.sendSMS("+8615187448504", "this is SIM868 for Send"))
+		// if(modem.sendSMS(phone,Alarm))
+		// {
+		// 	Serial.println("SendSMS Success");
+		// }
+		// else
+		// {
+		// 	Serial.println("SendSMS Fail");
+		// }
+        // return true;
     }
     return true;
 }
@@ -419,6 +435,7 @@ void SIM868::ReceiveCMD_Analysis(String res)
 		}
 		else if (cmdObject.hasOwnProperty("Mode"))//模式控制
 		{
+			Serial.println("");
 			Decice_Mode = (int)cmdObject["Mode"];
 			Decice_Timing_Mode.Save_DeviceMode((unsigned char)Decice_Mode);//保存设备状态至EEP
 
@@ -432,7 +449,16 @@ void SIM868::ReceiveCMD_Analysis(String res)
 				case 0x01:
 				{
 					Serial.println("Enter General Control Mode");
-					cmd.General_Control_Mode(res);//通用控制模式
+
+					if(!cmd.General_Control_Mode_Save(res))//通用控制模式保存
+					{
+						Receipt.General_Receipt(Decice_Mode,Set_Param_Err);// 通用回执（保存成功）// 通用回执（保存失败）
+						// 将模式重置为Stop模式
+					}
+					else
+					{
+						Receipt.General_Receipt(Decice_Mode,Set_Param_OK);// 通用回执（保存成功）
+					}
 					break;
 				}
 				case 0x02:

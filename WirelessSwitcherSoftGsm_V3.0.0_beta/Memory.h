@@ -64,6 +64,9 @@ struct ALARM
 
 extern struct ALARM Alarm_Array[5];
 extern char Week[7];
+extern unsigned char Mode1_interval;//
+extern unsigned char Mode1_RetryCnt;//
+extern unsigned char Mode2_RetryCnt;//
 
 /*
  @brief     : 上拉该引脚，禁止EEPROM写操作
@@ -108,7 +111,23 @@ public:
 	unsigned char Read_Alarm_Used(unsigned char count);//读取闹钟是否启用 
 	bool Clean_Alarm_Used(void);//清除所有的闹钟启用
 
+	bool Save_Mode1_interval(unsigned char data);//保存Mode1(通用控制模式)的interval
+	unsigned char Read_Mode1_interval(void);//读取Mode1(通用控制模式)的interval
+	bool Clean_Mode1_interval(void);//清除Mode1(通用控制模式)的interval
+
+	bool Save_Mode1_RetryCnt(unsigned char data);//保存Mode1(通用控制模式)的RetryCnt
+	unsigned char Read_Mode1_RetryCnt(void);//读取Mode1(通用控制模式)的RetryCnt
+	bool Clean_Mode1_RetryCnt(void);//清除Mode1(通用控制模式)的RetryCnt
+
+	bool Save_Mode2_Week(unsigned char* data);//保存Mode2(按周控制模式)的week数组
+	unsigned char* Read_Mode2_Week(void);//读取Mode2(按周控制模式)的week数组
+	bool Clean_Mode2_Week(void);//清除Mode2(按周控制模式)的week数组
+
+	bool Save_Mode2_RetryCnt(unsigned char data);//保存Mode2(按周控制模式)的RetryCnt
+	unsigned char Read_Mode2_RetryCnt(void);//读取Mode2(按周控制模式)的RetryCnt
+	bool Clean_Mode2_RetryCnt(void);//清除Mode2(按周控制模式)的RetryCnt
 };
+
 
 extern EEPROM_Operations EEPROM_Operation;
 extern Soft_Hard_Vertion Vertion;

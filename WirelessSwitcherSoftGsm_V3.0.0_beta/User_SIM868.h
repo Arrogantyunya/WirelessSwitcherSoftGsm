@@ -7,14 +7,38 @@
 #define RTC_FUN 	true
 #define TEST        true
 
+#define CMIOT       true//移动2G物联卡
+
+#define CMWAP       false//移动2G移动互联网
+#define CMNET       false//移动2G连接互联网()
+#define UNIWAP      false//联通2G移动互联网
+#define UNINET      false//联通2G连接互联网()
+#define CTWAP       false//电信2G移动互联网
+#define CTNET       false//电信2G连接互联网()
+
 
 // Your GPRS credentials
 // Leave empty, if missing user or pass
 //普通GSM 2G网络接入点APN为CMNET
 //物联网专用接入点APN为CMIOT
+#if CMIOT
 const char apn[] = "CMIOT";
 const char user[] = "";
 const char pass[] = "";
+#elif CMNET
+const char apn[] = "CMNET";
+const char user[] = "";
+const char pass[] = "";
+#elif UNINET
+const char apn[] = "UNINET";
+const char user[] = "";
+const char pass[] = "";
+#elif CTNET
+const char apn[] = "CTNET";
+const char user[] = "";
+const char pass[] = "";
+#else
+#endif
 
 
 #if TEST

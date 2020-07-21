@@ -22,6 +22,9 @@ Timing_Mode Decice_Timing_Mode;
 
 struct ALARM Alarm_Array[5];
 char Week[7] = {0};
+unsigned char Mode1_interval = 0;//
+unsigned char Mode1_RetryCnt = 0;//
+unsigned char Mode2_RetryCnt = 0;//
 
 /*
  @brief     : 设置EEPROM读写引脚
@@ -190,5 +193,263 @@ bool Timing_Mode::Clean_Alarm_Used(void)
 		Serial.println("Claen Alarm Used Fail");
 		return false;
 	}
+}
+
+/*
+ @brief     : 保存Mode1(通用控制模式)的interval
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Save_Mode1_interval(unsigned char data)
+{
+	EEPROM_Write_Enable();
+
+	AT24CXX_WriteOneByte(Mode1_interval_ADDR,data);
+
+	EEPROM_Write_Disable();
+
+	if(AT24CXX_ReadOneByte(Mode1_interval_ADDR) == data)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ @brief     : 读取Mode1(通用控制模式)的interval
+ @para      : 无
+ @return    : 无
+ */
+unsigned char Timing_Mode::Read_Mode1_interval(void)
+{
+	unsigned char x = AT24CXX_ReadOneByte(Mode1_interval_ADDR);
+	return x;
+}
+
+/*
+ @brief     : 清除Mode1(通用控制模式)的interval
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Clean_Mode1_interval(void)
+{
+	EEPROM_Write_Enable();
+
+	AT24CXX_WriteOneByte(Mode1_interval_ADDR,0x00);
+
+	EEPROM_Write_Disable();
+
+	if(AT24CXX_ReadOneByte(Mode1_interval_ADDR) == 0x00)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ @brief     : 保存Mode1(通用控制模式)的RetryCnt
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Save_Mode1_RetryCnt(unsigned char data)
+{
+	EEPROM_Write_Enable();
+
+	AT24CXX_WriteOneByte(Mode1_RetryCnt_ADDR,data);
+
+	EEPROM_Write_Disable();
+
+	if(AT24CXX_ReadOneByte(Mode1_RetryCnt_ADDR) == data)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ @brief     : 读取Mode1(通用控制模式)的RetryCnt
+ @para      : 无
+ @return    : 无
+ */
+unsigned char Timing_Mode::Read_Mode1_RetryCnt(void)
+{
+	unsigned char x = AT24CXX_ReadOneByte(Mode1_RetryCnt_ADDR);
+	return x;
+}
+
+/*
+ @brief     : 清除Mode1(通用控制模式)的RetryCnt
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Clean_Mode1_RetryCnt(void)
+{
+	EEPROM_Write_Enable();
+
+	AT24CXX_WriteOneByte(Mode1_RetryCnt_ADDR,0x00);
+
+	EEPROM_Write_Disable();
+
+	if(AT24CXX_ReadOneByte(Mode1_RetryCnt_ADDR) == 0x00)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ @brief     : 保存Mode2(按周控制模式)的week数组
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Save_Mode2_Week(unsigned char* data)
+{
+	bool All_true = true;
+	EEPROM_Write_Enable();
+
+	for (size_t i = 0; i < 7; i++)
+	{
+		AT24CXX_WriteOneByte(Mode2_WEEK_BASE_ADDR+i,data[i]);
+	}
+
+	EEPROM_Write_Disable();
+
+	for (size_t i = 0; i < 7; i++)
+	{
+		if(AT24CXX_ReadOneByte(Mode2_WEEK_BASE_ADDR+i) != data[i]);
+		{
+			All_true = false;
+		}
+	}
 	
+	if(All_true)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ @brief     : 读取Mode2(按周控制模式)的week数组
+ @para      : 无
+ @return    : 无
+ */
+unsigned char* Timing_Mode::Read_Mode2_Week(void)
+{
+	static unsigned char data[7];
+
+	for (size_t i = 0; i < 7; i++)
+	{
+		data[i] = AT24CXX_ReadOneByte(Mode2_WEEK_BASE_ADDR+i);
+	}
+	
+	return data;
+}
+
+/*
+ @brief     : 清除Mode2(按周控制模式)的week数组
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Clean_Mode2_Week(void)
+{
+	bool All_true = true;
+	EEPROM_Write_Enable();
+
+	for (size_t i = 0; i < 7; i++)
+	{
+		AT24CXX_WriteOneByte(Mode2_WEEK_BASE_ADDR+i,0x00);
+	}
+
+	EEPROM_Write_Disable();
+
+	for (size_t i = 0; i < 7; i++)
+	{
+		if(AT24CXX_ReadOneByte(Mode2_WEEK_BASE_ADDR+i) != 0x00);
+		{
+			All_true = false;
+		}
+	}
+	
+	if(All_true)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ @brief     : 保存Mode2(按周控制模式)的RetryCnt
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Save_Mode2_RetryCnt(unsigned char data)//
+{
+	EEPROM_Write_Enable();
+
+	AT24CXX_WriteOneByte(Mode2_RetryCnt_ADDR,data);
+
+	EEPROM_Write_Disable();
+
+	if(AT24CXX_ReadOneByte(Mode2_RetryCnt_ADDR) == data)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ @brief     : 读取Mode2(按周控制模式)的RetryCnt
+ @para      : 无
+ @return    : 无
+ */
+unsigned char Timing_Mode::Read_Mode2_RetryCnt(void)
+{
+	unsigned char x = AT24CXX_ReadOneByte(Mode2_RetryCnt_ADDR);
+
+	return x;
+}
+
+/*
+ @brief     : 清除Mode2(按周控制模式)的RetryCnt
+ @para      : 无
+ @return    : 无
+ */
+bool Timing_Mode::Clean_Mode2_RetryCnt(void)
+{
+	EEPROM_Write_Enable();
+
+	AT24CXX_WriteOneByte(Mode2_RetryCnt_ADDR,0x00);
+
+	EEPROM_Write_Disable();
+
+	if(AT24CXX_ReadOneByte(Mode2_RetryCnt_ADDR) == 0x00)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
